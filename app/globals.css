@@ -1,18 +1,25 @@
 /* =============================================================================
  * app/globals.css
- * Global styles + BudgetZen Design System tokens
+ * Global styles + BudgetZen Design System tokens (Light & Dark mode)
  * 
  * Tailwind CSS v4 menggunakan @theme directive untuk define design tokens
- * langsung di CSS (menggantikan tailwind.config.ts di versi sebelumnya)
+ * Dark mode di-trigger via class .dark di <html> (dihandle oleh next-themes)
  * 
- * NOTE: Google Fonts di-load via next/font/google di layout.tsx (bukan @import url)
- * supaya optimized dan gak ada layout shift
+ * NOTE: Google Fonts di-load via next/font/google di layout.tsx
  * ============================================================================= */
 
 @import "tailwindcss";
 
 /* =============================================================================
-  * @theme — BudgetZen Design Tokens
+  * CUSTOM VARIANT — Dark Mode via class
+  * next-themes akan toggle class "dark" di <html>
+  * Directive ini memberitahu Tailwind supaya dark: prefix aktif based on class
+  * ============================================================================= */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =============================================================================
+  * @theme — BudgetZen Design Tokens (Default / Light Mode)
   * Semua custom colors, fonts, shadows, radius didefinisikan di sini
   * Bisa langsung dipakai sebagai Tailwind classes: bg-primary, text-stone-text, dll
   * ============================================================================= */
@@ -33,7 +40,7 @@
     /* Neutral tones */
     --color-tertiary: #A8A29E;
     --color-neutral: #78716C;
-    /* Background & Surface */
+    /* Background & Surface — Light mode defaults */
     --color-background: #FAFFFE;
     --color-surface: #FFFFFF;
     /* Semantic colors */
@@ -56,7 +63,6 @@
     --font-mono: var(--font-mono), "Source Code Pro", monospace;
     /* ===========================================================================
      * BORDER RADIUS — Rounded corners sesuai BudgetZen
-     * Dari sharp (none) sampai full circle (avatars, toggles)
      * =========================================================================== */
     --radius-none: 0px;
     --radius-sm: 6px;
@@ -67,7 +73,6 @@
     /* ===========================================================================
      * BOX SHADOW — BudgetZen elevation system
      * Philosophy: Subtle, peaceful shadows. Never harsh or dramatic.
-     * Feel like a calm morning.
      * =========================================================================== */
     --shadow-subtle: 0 1px 3px rgba(28, 25, 23, 0.06);
     --shadow-medium: 0 4px 12px rgba(28, 25, 23, 0.08);
@@ -77,10 +82,51 @@
 
 
 /* =============================================================================
-  * BASE STYLES
-  * Styling tambahan untuk elemen HTML yang butuh font override
-  * Body styles sudah di-handle via className di layout.tsx
+  * DARK MODE — Override CSS variables when .dark class is active
+  * 
+  * Strategy: Pakai CSS variables yang di-override saat dark mode
+  * supaya component gak perlu tulis dark: prefix di setiap class
+  * Cukup pakai bg-background, text-stone-text — otomatis berubah warna
   * ============================================================================= */
+
+ :root {
+    /* Light mode (default) — variabel yang bisa di-override */
+    --bg-page: #FAFFFE;
+    --bg-card: #FFFFFF;
+    --text-primary: #1C1917;
+    --text-secondary: #57534E;
+    --border-default: #E7E5E4;
+    --border-muted: #D6D3D1;
+    --surface-muted: #F5F5F4;
+}
+
+.dark {
+    /* Dark mode — warna gelap yang calm & cozy, gak harsh */
+    --bg-page: #0F1419;
+    --bg-card: #1A2332;
+    --text-primary: #F1F5F9;
+    --text-secondary: #94A3B8;
+    --border-default: #2D3B4E;
+    --border-muted: #374357;
+    --surface-muted: #1E293B;
+    /* Override shadow supaya lebih subtle di dark */
+    --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --shadow-large: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+
+/* =============================================================================
+  * BASE STYLES
+  * Apply CSS variables ke body — otomatis switch saat dark/light
+  * ============================================================================= */
+
+body {
+    background-color: var(--bg-page);
+    color: var(--text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
 
 h1,
 h2,

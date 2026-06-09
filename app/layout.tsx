@@ -1,12 +1,12 @@
 // =============================================================================
 // app/layout.tsx
 // Root layout — wrapper utama seluruh halaman
-// Setup fonts (Manrope, Nunito, Source Code Pro) dari Google Fonts
-// via next/font/google (recommended way di Next.js)
+// Setup fonts (Manrope, Nunito, Source Code Pro) + ThemeProvider (dark/light)
 // =============================================================================
 
 import type { Metadata } from "next";
 import { Manrope, Nunito, Source_Code_Pro } from "next/font/google";
+import Providers from "./providers";
 import "./globals.css";
 
 // ===========================================================================
@@ -46,7 +46,9 @@ export const metadata: Metadata = {
 
 // ===========================================================================
 // ROOT LAYOUT — Wrapper HTML utama
-// Font variables di-inject ke <html> supaya bisa diakses di seluruh app
+// - Font variables di-inject ke <html> supaya accessible di seluruh app
+// - suppressHydrationWarning: prevent flicker warning dari next-themes
+// - Providers: wrap children dengan ThemeProvider untuk dark/light mode
 // ===========================================================================
 export default function RootLayout({
   children,
@@ -57,9 +59,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${manrope.variable} ${nunito.variable} ${sourceCodePro.variable}`}
+      suppressHydrationWarning // Required oleh next-themes untuk prevent hydration mismatch
     >
-      <body className="bg-background text-stone-text font-body min-h-screen antialiased">
-        {children}
+      <body className="font-body min-h-screen antialiased">
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
