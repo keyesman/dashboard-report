@@ -1,26 +1,97 @@
+/* =============================================================================
+ * app/globals.css
+ * Global styles + BudgetZen Design System tokens
+ * 
+ * Tailwind CSS v4 menggunakan @theme directive untuk define design tokens
+ * langsung di CSS (menggantikan tailwind.config.ts di versi sebelumnya)
+ * 
+ * NOTE: Google Fonts di-load via next/font/google di layout.tsx (bukan @import url)
+ * supaya optimized dan gak ada layout shift
+ * ============================================================================= */
+
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* =============================================================================
+  * @theme — BudgetZen Design Tokens
+  * Semua custom colors, fonts, shadows, radius didefinisikan di sini
+  * Bisa langsung dipakai sebagai Tailwind classes: bg-primary, text-stone-text, dll
+  * ============================================================================= */
+
+@theme {
+    /* ===========================================================================
+     * COLORS — BudgetZen color palette
+     * Primary: Mint green (CTA, progress, success indicators)
+     * Secondary: Sky blue (links, informational highlights)
+     * Neutral: Warm grays (text, borders, muted elements)
+     * =========================================================================== */
+    /* Primary — Mint */
+    --color-primary: #10B981;
+    --color-primary-hover: #059669;
+    --color-primary-light: #10B9811A;
+    /* Secondary — Sky */
+    --color-secondary: #38BDF8;
+    /* Neutral tones */
+    --color-tertiary: #A8A29E;
+    --color-neutral: #78716C;
+    /* Background & Surface */
+    --color-background: #FAFFFE;
+    --color-surface: #FFFFFF;
+    /* Semantic colors */
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+    --color-info: #38BDF8;
+    /* Stone palette — text, borders, surface variants */
+    --color-stone-text: #1C1917;
+    --color-stone-secondary: #57534E;
+    --color-stone-border: #E7E5E4;
+    --color-stone-muted: #D6D3D1;
+    --color-stone-surface: #F5F5F4;
+    /* ===========================================================================
+     * FONTS — BudgetZen typography
+     * Variable references dari next/font/google yang di-inject di layout.tsx
+     * =========================================================================== */
+    --font-headline: var(--font-headline), "Manrope", sans-serif;
+    --font-body: var(--font-body), "Nunito", sans-serif;
+    --font-mono: var(--font-mono), "Source Code Pro", monospace;
+    /* ===========================================================================
+     * BORDER RADIUS — Rounded corners sesuai BudgetZen
+     * Dari sharp (none) sampai full circle (avatars, toggles)
+     * =========================================================================== */
+    --radius-none: 0px;
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 9999px;
+    /* ===========================================================================
+     * BOX SHADOW — BudgetZen elevation system
+     * Philosophy: Subtle, peaceful shadows. Never harsh or dramatic.
+     * Feel like a calm morning.
+     * =========================================================================== */
+    --shadow-subtle: 0 1px 3px rgba(28, 25, 23, 0.06);
+    --shadow-medium: 0 4px 12px rgba(28, 25, 23, 0.08);
+    --shadow-large: 0 8px 24px rgba(28, 25, 23, 0.10);
+    --shadow-overlay: 0 16px 48px rgba(28, 25, 23, 0.14);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+/* =============================================================================
+  * BASE STYLES
+  * Styling tambahan untuk elemen HTML yang butuh font override
+  * Body styles sudah di-handle via className di layout.tsx
+  * ============================================================================= */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-headline);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+code,
+pre {
+    font-family: var(--font-mono);
 }
