@@ -24,6 +24,7 @@ const buttonVariants = cva(
   `inline-flex items-center justify-center gap-2
    font-headline font-semibold
    rounded-md transition-all duration-200
+   cursor-pointer
    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50
    disabled:opacity-50 disabled:cursor-not-allowed`,
   {

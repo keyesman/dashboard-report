@@ -23,7 +23,9 @@ import { Card } from "@/components/ui/card";
 import { StatusBadge, PriorityBadge, Badge } from "@/components/ui/badge";
 import { showToast } from "@/components/ui/toast";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Search, RefreshCw, Filter } from "lucide-react";
+import { Search, RefreshCw, Filter, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 
 // ===========================================================================
 // TYPES
@@ -158,11 +160,23 @@ const columns: ColumnDef<Ticket>[] = [
   },
   {
     accessorKey: "escalationCategory",
-    header     : "Esc. Category",
+    header     : "Escalation Category",
     cell       : ({ row }) =>
       row.original.escalationCategory ? (
         <Badge variant="info" className="text-xs">
           {row.original.escalationCategory}
+        </Badge>
+      ) : (
+        <span className="text-xs text-[var(--text-secondary)]">-</span>
+      ),
+  },
+  {
+    accessorKey: "escalationNote",
+    header     : "Escalation Note",
+    cell       : ({ row }) =>
+      row.original.escalationNote ? (
+        <Badge variant="info" className="text-xs">
+          {row.original.escalationNote}
         </Badge>
       ) : (
         <span className="text-xs text-[var(--text-secondary)]">-</span>
@@ -186,6 +200,7 @@ export default function TicketsPage() {
   });
   const [isLoading,     setIsLoading]     = useState(false);
   const [hasSearched,   setHasSearched]   = useState(false);
+  const [filterOpen, setFilterOpen] = useState(true); // Default: expanded
 
   // Filter state
   const today     = new Date().toISOString().split("T")[0];
@@ -310,105 +325,156 @@ export default function TicketsPage() {
       description="List semua ticket dari Chatwoot"
     >
       {/* =================================================================
-          FILTER SECTION
+          FILTER SECTION — Collapsible
           ================================================================= */}
       <Card className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter size={16} className="text-primary" />
-          <h2 className="font-headline font-semibold text-[var(--text-primary)]">
-            Filter
-          </h2>
-        </div>
+        {/* Header filter — klik untuk collapse/expand */}
+        {/* Header filter — klik untuk collapse/expand */}
+        <button
+          onClick={() => setFilterOpen(!filterOpen)}
+          className="w-full flex items-center justify-between cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter size={16} className="text-primary" />
+              <h2 className="font-headline font-semibold text-[var(--text-primary)]">
+                Filter
+              </h2>
+            </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Date From */}
-          <Input
-            label="Dari Tanggal"
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-          />
+            {/* Divider */}
+            <span className="text-[var(--border-default)]">|</span>
 
-          {/* Date To */}
-          <Input
-            label="Sampai Tanggal"
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-          />
+            {/* Reset Filter button */}
+            <button
+              onClick={(e) => {
+                // Stop propagation supaya gak trigger collapse/expand
+                e.stopPropagation();
 
-          {/* Status */}
-          <Select
-            label="Status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            options={[
-              { value: "", label: "Semua Status" },
-              ...filterOptions.statuses.map((s) => ({ value: s, label: s })),
-            ]}
-          />
+                // Reset semua filter ke default
+                setDateFrom(weekAgo);
+                setDateTo(today);
+                setAgent("");
+                setService("");
+                setPriority("");
+                setEscalate("");
+                setStatus("");
+              }}
+              className="
+                font-body text-sm text-[var(--text-secondary)]
+                hover:text-primary transition-colors duration-150
+                cursor-pointer
+              "
+            >
+              Reset Filter
+            </button>
+          </div>
 
-          {/* Agent */}
-          <Select
-            label="Agent"
-            value={agent}
-            onChange={(e) => setAgent(e.target.value)}
-            options={[
-              { value: "", label: "Semua Agent" },
-              ...filterOptions.agents.map((a) => ({ value: a, label: a })),
-            ]}
-          />
-
-          {/* Service */}
-          <Select
-            label="Service"
-            value={service}
-            onChange={(e) => setService(e.target.value)}
-            options={[
-              { value: "", label: "Semua Service" },
-              ...filterOptions.services.map((s) => ({ value: s, label: s })),
-            ]}
-          />
-
-          {/* Priority */}
-          <Select
-            label="Priority"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value)}
-            options={[
-              { value: "", label: "Semua Priority" },
-              ...filterOptions.priorities.map((p) => ({ value: p, label: p })),
-            ]}
-          />
-
-          {/* Escalate */}
-          <Select
-            label="Escalate"
-            value={escalate}
-            onChange={(e) => setEscalate(e.target.value)}
-            options={[
-              { value: "", label: "Semua Level" },
-              ...filterOptions.escalates.map((e) => ({ value: e, label: e })),
-            ]}
-          />
-        </div>
-
-        {/* Submit Button */}
-        <div className="mt-4 flex justify-end">
-          <Button
-            onClick={fetchTickets}
-            disabled={isLoading}
-            className="gap-2"
-          >
-            {isLoading ? (
-              <RefreshCw size={16} className="animate-spin" />
-            ) : (
-              <Search size={16} />
+          {/* Chevron icon — rotate saat expand */}
+          <ChevronDown
+            size={16}
+            className={cn(
+              "text-[var(--text-secondary)] transition-transform duration-200",
+              filterOpen && "rotate-180"
             )}
-            {isLoading ? "Loading..." : "Tampilkan Data"}
-          </Button>
-        </div>
+          />
+        </button>
+
+
+        {/* Filter content — collapse/expand */}
+        {filterOpen && (
+          <div className="mt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 items-end">
+              {/* Date From */}
+              <Input
+                label="Dari Tanggal"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+
+              {/* Date To */}
+              <Input
+                label="Sampai Tanggal"
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+
+              {/* Status */}
+              <Select
+                label="Status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                options={[
+                  { value: "", label: "Semua Status" },
+                  ...filterOptions.statuses.map((s) => ({ value: s, label: s })),
+                ]}
+              />
+
+              {/* Agent */}
+              <Select
+                label="Agent"
+                value={agent}
+                onChange={(e) => setAgent(e.target.value)}
+                options={[
+                  { value: "", label: "Semua Agent" },
+                  ...filterOptions.agents.map((a) => ({ value: a, label: a })),
+                ]}
+              />
+
+              {/* Service */}
+              <Select
+                label="Service"
+                value={service}
+                onChange={(e) => setService(e.target.value)}
+                options={[
+                  { value: "", label: "Semua Service" },
+                  ...filterOptions.services.map((s) => ({ value: s, label: s })),
+                ]}
+              />
+
+              {/* Priority */}
+              <Select
+                label="Priority"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                options={[
+                  { value: "", label: "Semua Priority" },
+                  ...filterOptions.priorities.map((p) => ({ value: p, label: p })),
+                ]}
+              />
+
+              {/* Escalate */}
+              <Select
+                label="Escalate"
+                value={escalate}
+                onChange={(e) => setEscalate(e.target.value)}
+                options={[
+                  { value: "", label: "Semua Level" },
+                  ...filterOptions.escalates.map((e) => ({ value: e, label: e })),
+                ]}
+              />
+
+              {/* Submit Button */}
+              <Button
+                onClick={fetchTickets}
+                disabled={isLoading}
+                className="gap-2 w-full whitespace-nowrap mt-5"
+              >
+                {isLoading ? (
+                  <RefreshCw size={16} className="animate-spin" />
+                ) : (
+                  <Search size={16} />
+                )}
+                {isLoading ? "Loading..." : "Tampilkan"}
+              </Button>
+            </div>
+          </div>
+        )}
+
       </Card>
+
 
       {/* =================================================================
           DATA TABLE

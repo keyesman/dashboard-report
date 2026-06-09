@@ -154,10 +154,10 @@ export default function AnalyticsPage() {
       description="Chart dan metrik performa tim support"
     >
       {/* =================================================================
-          FILTER PERIODE
+          FILTER PERIODE — 1 baris lurus
           ================================================================= */}
       <Card className="mb-6">
-        <div className="flex flex-wrap items-end gap-4">
+        <div className="flex items-end gap-4">
           <Input
             label="Dari Tanggal"
             type="date"
@@ -175,7 +175,7 @@ export default function AnalyticsPage() {
           <Button
             onClick={fetchAnalytics}
             disabled={isLoading}
-            className="gap-2 mb-0.5"
+            className="gap-2 mb-0.5 shrink-0 whitespace-nowrap"
           >
             {isLoading
               ? <RefreshCw size={16} className="animate-spin" />
@@ -185,6 +185,7 @@ export default function AnalyticsPage() {
           </Button>
         </div>
       </Card>
+
 
       {/* Belum ada data */}
       {!hasLoaded && !isLoading && (
@@ -261,20 +262,12 @@ export default function AnalyticsPage() {
                         fontSize     : "12px",
                       }}
                     />
-                    <Legend />
+                    
                     <Line
                       type="monotone"
                       dataKey="ticketCreated"
                       name="Ticket Masuk"
                       stroke="#10B981"
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="ticketSolved"
-                      name="Ticket Solved"
-                      stroke="#38BDF8"
                       strokeWidth={2}
                       dot={false}
                     />
@@ -339,6 +332,7 @@ export default function AnalyticsPage() {
 
           {/* ===============================================================
               CHART 3 — Breakdown (Bar Chart)
+              Vertikal: label di bawah, bar tumbuh ke atas
               =============================================================== */}
           <Card>
             <CardHeader>
@@ -365,20 +359,30 @@ export default function AnalyticsPage() {
             <CardContent>
               {breakdown.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={breakdown} layout="vertical">
+                  {/* Layout default (tanpa layout="vertical") = bar vertikal */}
+                  <BarChart
+                    data={breakdown}
+                    margin={{ top: 5, right: 20, left: 0, bottom: 60 }}
+                  >
                     <CartesianGrid
                       strokeDasharray="3 3"
                       stroke="var(--border-default)"
+                      vertical={false} // Hilangkan grid vertikal supaya lebih clean
                     />
                     <XAxis
-                      type="number"
-                      tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
+                      dataKey="label"
+                      tick={{
+                        fontSize : 11,
+                        fill     : "var(--text-secondary)",
+                      }}
+                      // Rotate label supaya gak overlap kalau teks panjang
+                      angle={-35}
+                      textAnchor="end"
+                      interval={0} // Tampilkan semua label
                     />
                     <YAxis
-                      type="category"
-                      dataKey="label"
-                      width={120}
                       tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
+                      allowDecimals={false} // Hanya bilangan bulat
                     />
                     <Tooltip
                       contentStyle={{
@@ -387,12 +391,14 @@ export default function AnalyticsPage() {
                         borderRadius: "8px",
                         fontSize    : "12px",
                       }}
+                      cursor={{ fill: "var(--surface-muted)" }}
                     />
                     <Bar
                       dataKey="total"
                       name="Total Tickets"
-                      fill="#10B981"
-                      radius={[0, 4, 4, 0]}
+                      fill="#10B981"       // Mint green sesuai BudgetZen
+                      radius={[4, 4, 0, 0]} // Rounded top only
+                      maxBarSize={100}       // Max lebar bar supaya gak terlalu lebar
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -403,6 +409,7 @@ export default function AnalyticsPage() {
               )}
             </CardContent>
           </Card>
+
         </>
       )}
     </DashboardLayout>

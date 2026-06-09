@@ -79,7 +79,7 @@ interface SyncResult {
 // ===========================================================================
 const tabs = [
   { id: "shifts",     label: "Shift Config",    icon: Clock      },
-  { id: "categories", label: "Esc. Categories", icon: Tag        },
+  { id: "categories", label: "Escalation", icon: Tag        },
   { id: "users",      label: "User Management", icon: Users      },
   { id: "sync",       label: "Sync Data",       icon: RefreshCw  },
 ];
@@ -438,7 +438,7 @@ export default function SettingsPage() {
   return (
     <DashboardLayout
       title="Settings"
-      description="Kelola shift, escalation categories, dan user"
+      description="Kelola shift, escalation categories, user, dan sync data"
     >
       {/* TAB NAVIGATION */}
       <div className="flex gap-1 mb-6 bg-[var(--surface-muted)] p-1 rounded-md w-fit">
