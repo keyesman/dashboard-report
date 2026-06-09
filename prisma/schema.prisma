@@ -15,8 +15,10 @@
 // Setelah jalankan `npx prisma generate`, otomatis bisa import dari @prisma/client
 // ===========================================================================
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
+
 
 // ===========================================================================
 // DATASOURCE — Koneksi ke PostgreSQL
