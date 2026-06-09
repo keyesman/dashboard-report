@@ -1,29 +1,35 @@
 // =============================================================================
 // app/providers.tsx
-// Theme Provider wrapper — menghandle dark/light mode switching
-// 
-// Pakai next-themes supaya:
-// - Theme persist di localStorage (user gak perlu switch ulang)
-// - Support system preference (ikut OS setting)
-// - No flicker saat page load (ditangani oleh suppressHydrationWarning)
+// Global providers wrapper — membungkus seluruh app dengan context providers
+//
+// Providers yang dipakai:
+// - SessionProvider : NextAuth session context (wajib untuk useSession hook)
+// - ThemeProvider   : Dark/light mode context
+// - Toaster         : Toast notification container
 // =============================================================================
 
-"use client"; // Wajib client component karena pakai context/state
+"use client"; // Client component karena semua provider butuh client context
 
-import { ThemeProvider } from "next-themes";
-import { Toaster } from "@/components/ui/toast"; // Import Toaster
+import { SessionProvider } from "next-auth/react";
+import { ThemeProvider }   from "next-themes";
+import { Toaster }         from "@/components/ui/toast";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider
-      attribute="class"        // Toggle class "dark" di <html>
-      defaultTheme="system"    // Default ikut OS preference user
-      enableSystem             // Support auto-detect OS dark/light
-      disableTransitionOnChange={false} // Allow smooth color transition
-    >
-      {children}
-      {/* Toaster — taruh di sini supaya aktif di seluruh app */}
-      <Toaster />
-    </ThemeProvider>
+    // SessionProvider — wajib ada supaya useSession() bisa dipakai
+    // di semua client components
+    <SessionProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange={false}
+      >
+        {children}
+
+        {/* Toaster — container untuk semua toast notifications */}
+        <Toaster />
+      </ThemeProvider>
+    </SessionProvider>
   );
 }
