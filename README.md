@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dashboard Reporting Chatwoot (v2)
 
-## Getting Started
+Dashboard reporting internal untuk monitoring dan analisis ticket L1 Support berbasis data dari Chatwoot.
+Direfactor dari Python/Streamlit ke Next.js + TypeScript.
 
-First, run the development server:
+## Tech Stack
 
-```bash
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | Next.js 15+ (App Router, TypeScript) |
+| **Styling** | Tailwind CSS v4 + BudgetZen Design System |
+| **Database** | PostgreSQL + Prisma ORM v7 |
+| **Auth** | NextAuth.js v5 (JWT + Bcrypt) |
+| **Charts** | Recharts |
+| **Table** | TanStack Table v8 |
+| **UI Components** | Custom (Radix UI primitives) |
+
+## Features
+
+- 🎫 **Tickets** — List, filter, export CSV, input escalation
+- 📈 **Analytics** — Chart volume, AVG FRT trend, breakdown by agent/service/type
+- ⚙️ **Settings** — Manage shift config, escalation categories, user management
+- 🔐 **Auth** — Login dengan JWT, role-based access (admin/leader/viewer)
+- 🌙 **Dark Mode** — Light/dark/system theme toggle
+- 🔄 **Sync** — Manual & auto sync data dari Chatwoot API
+
+## Requirements
+
+- Node.js v20+
+- PostgreSQL 14+
+
+## Setup & Installation
+
+### 1. Clone repository
+git clone https://github.com/keyesman/dashboard-report.git
+cd dashboard-report
+
+### 2. Install dependencies
+npm install
+
+### 3. Setup environment
+cp .env.example .env
+# Edit .env dan isi credentials yang sesuai
+
+### 4. Setup database
+npx prisma migrate dev
+npx prisma db seed
+
+### 5. Jalankan development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Default Login
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Field | Value |
+|-------|-------|
+| Email | admin@dashboard.com |
+| Password | Admin123! |
 
-## Learn More
+> ⚠️ Ganti password setelah pertama kali login!
 
-To learn more about Next.js, take a look at the following resources:
+## Roles & Akses
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Role | Tickets | Analytics | Escalation | Settings | User Mgmt |
+|------|:-------:|:---------:|:----------:|:--------:|:---------:|
+| admin | ✓ | ✓ | ✓ | ✓ | ✓ |
+| leader | ✓ | ✓ | ✓ | ✓ Shift only | ✗ |
+| viewer | ✓ | ✓ | ✗ | ✗ | ✗ |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Sync Data dari Chatwoot
 
-## Deploy on Vercel
+### Manual Sync (dari Settings page)
+Akan kita tambahkan di halaman Settings — tombol sync dengan date range picker.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Auto Sync via Cron
+Endpoint: `GET /api/sync/cron`
+Header: `x-cron-secret: YOUR_CRON_SECRET`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Contoh setup dengan cron (setiap hari jam 09:00):
