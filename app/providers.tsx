@@ -11,6 +11,7 @@
 "use client"; // Wajib client component karena pakai context/state
 
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "@/components/ui/toast"; // Import Toaster
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +22,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange={false} // Allow smooth color transition
     >
       {children}
+      {/* Toaster — taruh di sini supaya aktif di seluruh app */}
+      <Toaster />
     </ThemeProvider>
   );
 }
