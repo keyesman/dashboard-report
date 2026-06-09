@@ -1,0 +1,140 @@
+// =============================================================================
+// prisma/schema.prisma
+// Database schema — mapping dari SQL migrations project lama ke Prisma
+// 
+// Models:
+// - User          : Akun login dashboard (admin, leader, viewer)
+// - Conversation  : Data ticket dari Chatwoot
+// - ShiftConfig   : Konfigurasi jam kerja shift
+// - EscalationCategory : Dropdown pilihan kategori escalation
+// - SyncLog       : Log history sync data dari Chatwoot API
+// =============================================================================
+
+// ===========================================================================
+// GENERATOR — Generate Prisma Client (TypeScript query builder)
+// Setelah jalankan `npx prisma generate`, otomatis bisa import dari @prisma/client
+// ===========================================================================
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ===========================================================================
+// DATASOURCE — Koneksi ke PostgreSQL
+// Connection string dikonfigurasi di prisma.config.ts (Prisma v7+)
+// ===========================================================================
+datasource db {
+  provider = "postgresql"
+}
+
+
+// ===========================================================================
+// MODEL: User
+// Akun yang bisa login ke dashboard
+// Roles: admin (full access), leader (shift + escalation), viewer (read only)
+// Mapping ke tabel "users" di database
+// ===========================================================================
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String    // Nama display user
+  email         String    @unique // Email untuk login (harus unik)
+  passwordHash  String    @map("password_hash") // Bcrypt hash, JANGAN simpan plain text
+  role          String    @default("viewer") // admin | leader | viewer
+  isActive      Boolean   @default(true) @map("is_active") // false = gak bisa login
+  lastLoginAt   DateTime? @map("last_login_at") // Timestamp login terakhir
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("users") // Nama tabel di PostgreSQL
+}
+
+// ===========================================================================
+// MODEL: Conversation
+// Data ticket dari Chatwoot — di-sync via cron job / manual trigger
+// Ini tabel utama yang ditampilkan di halaman Tickets & Analytics
+// Mapping ke tabel "conversations" di database
+// ===========================================================================
+model Conversation {
+  id                    Int       @id @default(autoincrement())
+  ticketId              Int       @unique @map("ticket_id") // ID dari Chatwoot
+  createdAt             DateTime  @map("created_at") // Waktu ticket dibuat di Chatwoot
+  status                String    // open | resolved | pending | snoozed
+  agent                 String?   // Nama agent yang handle (nullable kalau unassigned)
+  service               String?   // Parsed dari label 2_xxx
+  priority              String?   // P1 | P2 | P3 | P4
+  escalate              String?   // L1 | L2
+  type                  String?   // Bug | Human Error | Question | Request | dll
+  rawLabels             String?   @map("raw_labels") // Original labels CSV dari Chatwoot
+  frtSeconds            Int?      @map("frt_seconds") // First Response Time dalam detik
+  resolutionTimeSeconds Int?      @map("resolution_time_seconds") // Resolution time dalam detik
+  resolveCount          Int       @default(0) @map("resolve_count") // Berapa kali di-resolve
+  isReopened            Boolean   @default(false) @map("is_reopened") // true kalau resolve > 1
+  lastNote              String?   @map("last_note") // Private note terakhir dari agent
+  company               String?   // Nama company customer
+  customer              String?   // Nama customer
+  phone                 String?   // Nomor HP customer
+
+  // Escalation fields — diisi manual oleh admin/leader di halaman Tickets
+  escalationNote        String?   @map("escalation_note")
+  escalationCategory    String?   @map("escalation_category")
+  escalationUpdatedBy   Int?      @map("escalation_updated_by") // user_id yang update
+  escalationUpdatedAt   DateTime? @map("escalation_updated_at")
+
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@map("conversations") // Nama tabel di PostgreSQL
+}
+
+// ===========================================================================
+// MODEL: ShiftConfig
+// Konfigurasi jam kerja shift — dipakai untuk kategorisasi ticket
+// berdasarkan jam created_at masuk ke shift mana
+// Mapping ke tabel "shift_config" di database
+// ===========================================================================
+model ShiftConfig {
+  id            Int      @id @default(autoincrement())
+  shiftName     String   @map("shift_name") // Pagi, Siang, Malam, dll
+  startTime     String   @map("start_time") // Format HH:MM (contoh: "05:00")
+  endTime       String   @map("end_time") // Format HH:MM (contoh: "13:59")
+  priorityOrder Int      @map("priority_order") // Urutan prioritas kalau overlap
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("shift_config") // Nama tabel di PostgreSQL
+}
+
+// ===========================================================================
+// MODEL: EscalationCategory
+// Pilihan dropdown escalation category di halaman Tickets
+// Admin bisa tambah/toggle aktif dari halaman Settings
+// Mapping ke tabel "escalation_categories" di database
+// ===========================================================================
+model EscalationCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique // Nama category (harus unik)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("escalation_categories") // Nama tabel di PostgreSQL
+}
+
+// ===========================================================================
+// MODEL: SyncLog
+// Log setiap kali sync data dari Chatwoot API dijalankan
+// Berguna untuk tracking: kapan terakhir sync, berapa data yang masuk, ada error gak
+// Mapping ke tabel "sync_log" di database
+// ===========================================================================
+model SyncLog {
+  id          Int      @id @default(autoincrement())
+  syncType    String   @map("sync_type") // "cron" | "manual"
+  dateFrom    String   @map("date_from") // Range tanggal sync YYYY-MM-DD
+  dateTo      String   @map("date_to")
+  totalSynced Int      @default(0) @map("total_synced") // Jumlah record yang berhasil sync
+  status      String   @default("running") // running | success | failed
+  errorMsg    String?  @map("error_msg") // Pesan error kalau gagal
+  startedAt   DateTime @default(now()) @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+
+  @@map("sync_log") // Nama tabel di PostgreSQL
+}
