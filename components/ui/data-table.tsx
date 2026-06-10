@@ -67,7 +67,7 @@ interface DataTableProps<TData, TValue> {
 // EXPORT TO CSV — Menggunakan library SheetJS (xlsx)
 // Handle semua edge case otomatis: newline, koma, quotes, special chars
 // ===========================================================================
-function exportToCSV(data: Record<string, unknown>[], fileName: string) {
+function exportToXlsx(data: Record<string, unknown>[], fileName: string) {
   if (!data.length) return;
 
   const XLSX = require("xlsx");
@@ -174,7 +174,7 @@ export function DataTable<TData, TValue>({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => exportToCSV(
+            onClick={() => exportToXlsx(
               exportData ?? (data as Record<string, unknown>[]),
               exportFileName
             )}
