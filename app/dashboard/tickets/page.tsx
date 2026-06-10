@@ -49,6 +49,7 @@ interface Ticket {
   phone                : string | null;
   escalationNote       : string | null;
   escalationCategory   : string | null;
+  rawLabels            : string | null; // Tambah ini kalau belum ada
 }
 
 interface FilterOptions {
@@ -182,6 +183,41 @@ const columns: ColumnDef<Ticket>[] = [
         <span className="text-xs text-[var(--text-secondary)]">-</span>
       ),
   },
+  {
+    accessorKey: "rawLabels",
+    header     : "Tags",
+    cell       : ({ row }) => {
+      // Kalau tidak ada labels, tampilkan dash
+      if (!row.original.rawLabels) {
+        return <span className="text-xs text-[var(--text-secondary)]">-</span>;
+      }
+  
+      // Split raw_labels by koma, lalu tampilkan sebagai badge
+      const labels = row.original.rawLabels
+        .split(",")
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0);
+  
+      return (
+        <div className="flex flex-wrap gap-1">
+          {labels.map((label) => (
+            <span
+              key={label}
+              className="
+                inline-block px-2 py-0.5
+                bg-[var(--surface-muted)]
+                border border-[var(--border-default)]
+                text-[var(--text-secondary)]
+                text-xs font-mono rounded-sm
+              "
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      );
+    },
+  },  
 ];
 
 // ===========================================================================
