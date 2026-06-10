@@ -229,3 +229,72 @@ export async function getBreakdownBy(
     .map(([label, total]) => ({ label, total }))
     .sort((a, b) => b.total - a.total);
 }
+
+// ===========================================================================
+// GET AVAILABLE YEARS — Ambil list tahun yang ada di DB
+// Dipakai untuk filter dropdown tahun di Overview page
+// ===========================================================================
+export async function getAvailableYears(): Promise<number[]> {
+  // Ambil semua distinct tahun dari createdAt conversations
+  const tickets = await prisma.conversation.findMany({
+    select  : { createdAt: true },
+    distinct: ["createdAt"],
+  });
+
+  // Extract tahun dari setiap createdAt, lalu deduplicate
+  const years = [
+    ...new Set(tickets.map((t) => t.createdAt.getFullYear()))
+  ];
+
+  // Sort descending (terbaru dulu)
+  return years.sort((a, b) => b - a);
+}
+
+// ===========================================================================
+// GET MONTHLY VOLUME — Ticket per bulan dalam 1 tahun
+// Dipakai untuk bar chart di Overview page
+// ===========================================================================
+export interface MonthlyVolumeRow {
+  month     : number; // 1-12
+  monthLabel: string; // "Jan", "Feb", dst
+  total     : number; // Jumlah ticket di bulan itu
+}
+
+export async function getMonthlyVolume(year: number): Promise<MonthlyVolumeRow[]> {
+  // Ambil semua ticket dalam tahun yang dipilih
+  const tickets = await prisma.conversation.findMany({
+    where: {
+      createdAt: {
+        gte: new Date(`${year}-01-01T00:00:00.000Z`),
+        lte: new Date(`${year}-12-31T23:59:59.999Z`),
+      },
+    },
+    select: { createdAt: true },
+  });
+
+  // Label bulan dalam Bahasa Indonesia
+  const monthLabels = [
+    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+    "Jul", "Ags", "Sep", "Okt", "Nov", "Des",
+  ];
+
+  // Inisialisasi semua 12 bulan dengan total 0
+  const monthMap = new Map<number, number>();
+  for (let i = 1; i <= 12; i++) {
+    monthMap.set(i, 0);
+  }
+
+  // Hitung ticket per bulan
+  tickets.forEach((ticket) => {
+    // getMonth() return 0-11, tambah 1 supaya jadi 1-12
+    const month = ticket.createdAt.getMonth() + 1;
+    monthMap.set(month, (monthMap.get(month) ?? 0) + 1);
+  });
+
+  // Convert ke array dengan label bulan
+  return Array.from(monthMap.entries()).map(([month, total]) => ({
+    month,
+    monthLabel: monthLabels[month - 1],
+    total,
+  }));
+}
