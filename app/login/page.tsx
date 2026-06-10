@@ -43,7 +43,7 @@ export default function LoginPage() {
 
     // Validasi sederhana sebelum kirim ke server
     if (!email || !password) {
-      setErrorMsg("Email dan password wajib diisi.");
+      setErrorMsg("Email and password are required.");
       return;
     }
 
@@ -59,17 +59,17 @@ export default function LoginPage() {
 
       if (result?.error) {
         // Login gagal — tampilkan pesan error
-        setErrorMsg("Email atau password salah.");
-        showToast.error("Login gagal", "Periksa kembali email dan password kamu.");
+        setErrorMsg("Incorrect email or password.");
+        showToast.error("Login failed", "Please check your email and password again.");
       } else {
         // Login sukses — redirect ke dashboard
-        showToast.success("Login berhasil!", "Selamat datang kembali.");
+        showToast.success("Login successful", "Welcome Back.");
         router.push("/dashboard");
         router.refresh(); // Refresh untuk update session
       }
     } catch {
-      setErrorMsg("Terjadi kesalahan. Coba lagi.");
-      showToast.error("Login gagal", "Terjadi kesalahan server.");
+      setErrorMsg("There is an error. Try Again!.");
+      showToast.error("Login failed", "A server error occurred.");
     } finally {
       setIsLoading(false);
     }
@@ -87,16 +87,13 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           {/* Logo */}
           <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4 shadow-medium">
-            <span className="text-white font-headline font-bold text-2xl">C</span>
+            <span className="text-white font-headline font-bold text-2xl">L1</span>
           </div>
 
           {/* Title */}
           <h1 className="font-headline text-2xl font-bold text-[var(--text-primary)]">
-            Chatwoot Dashboard
+            L1 Reporting Dashboard
           </h1>
-          <p className="font-body text-sm text-[var(--text-secondary)] mt-1">
-            Masuk untuk melanjutkan
-          </p>
         </div>
 
         {/* ==================================================================
@@ -121,7 +118,7 @@ export default function LoginPage() {
             <Input
               label="Password"
               type={showPass ? "text" : "password"}
-              placeholder="Masukkan password"
+              placeholder="type your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
@@ -160,12 +157,12 @@ export default function LoginPage() {
                 // Loading spinner
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Masuk...
+                  Loging in...
                 </>
               ) : (
                 <>
                   <LogIn size={18} />
-                  Masuk
+                  Login
                 </>
               )}
             </Button>
@@ -175,13 +172,16 @@ export default function LoginPage() {
         {/* ==================================================================
             FOOTER — Default credentials info (development only)
             ================================================================== */}
+            {/*
         {process.env.NODE_ENV === "development" && (
           <div className="mt-4 bg-info/10 border border-info/20 rounded-md px-4 py-3 text-center">
             <p className="font-body text-xs text-info">
               💡 Default: <span className="font-mono font-semibold">admin@dashboard.com</span> / <span className="font-mono font-semibold">Admin123!</span>
+              
             </p>
           </div>
         )}
+        */}
       </div>
     </div>
   );

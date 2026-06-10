@@ -21,7 +21,7 @@ export default async function DashboardPage() {
   return (
     <DashboardLayout
       title="Overview"
-      description="Welcome to L1 Report Dashboard"
+      description="Welcome to L1 Reporting Dashboard"
     >
       {/* Welcome message */}
       <div className="mb-8">
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
           Hello, {session.user?.name}! 👋
         </h2>
         <p className="font-body text-sm text-[var(--text-secondary)] mt-1">
-          Berikut ringkasan dashboard kamu hari ini.
+          {/* Berikut ringkasan dashboard kamu hari ini. */}
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
               Tickets
             </p>
             <p className="font-body text-sm text-[var(--text-secondary)] mt-0.5">
-              Lihat dan filter semua ticket dari Chatwoot
+            View and filter all tickets from Chatwoot
             </p>
           </div>
         </Card>
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
               Analytics
             </p>
             <p className="font-body text-sm text-[var(--text-secondary)] mt-0.5">
-              Chart dan metrik performa tim support
+            L1 team performance charts and metrics
             </p>
           </div>
         </Card>
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
               Settings
             </p>
             <p className="font-body text-sm text-[var(--text-secondary)] mt-0.5">
-              Kelola shift, kategori, dan user
+            Manage shifts, categories, users and sync data
             </p>
           </div>
         </Card>

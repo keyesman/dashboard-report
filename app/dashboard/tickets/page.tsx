@@ -322,7 +322,7 @@ export default function TicketsPage() {
   return (
     <DashboardLayout
       title="Tickets"
-      description="List semua ticket dari Chatwoot"
+      description="List of all tickets from Chatwoot"
     >
       {/* =================================================================
           FILTER SECTION — Collapsible
@@ -387,7 +387,7 @@ export default function TicketsPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 items-end">
               {/* Date From */}
               <Input
-                label="Dari Tanggal"
+                label="From"
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
@@ -395,7 +395,7 @@ export default function TicketsPage() {
 
               {/* Date To */}
               <Input
-                label="Sampai Tanggal"
+                label="To"
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
@@ -407,7 +407,7 @@ export default function TicketsPage() {
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 options={[
-                  { value: "", label: "Semua Status" },
+                  { value: "", label: "All Statuses" },
                   ...filterOptions.statuses.map((s) => ({ value: s, label: s })),
                 ]}
               />
@@ -418,7 +418,7 @@ export default function TicketsPage() {
                 value={agent}
                 onChange={(e) => setAgent(e.target.value)}
                 options={[
-                  { value: "", label: "Semua Agent" },
+                  { value: "", label: "All Agents" },
                   ...filterOptions.agents.map((a) => ({ value: a, label: a })),
                 ]}
               />
@@ -429,7 +429,7 @@ export default function TicketsPage() {
                 value={service}
                 onChange={(e) => setService(e.target.value)}
                 options={[
-                  { value: "", label: "Semua Service" },
+                  { value: "", label: "All Services" },
                   ...filterOptions.services.map((s) => ({ value: s, label: s })),
                 ]}
               />
@@ -440,7 +440,7 @@ export default function TicketsPage() {
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
                 options={[
-                  { value: "", label: "Semua Priority" },
+                  { value: "", label: "All Priorities" },
                   ...filterOptions.priorities.map((p) => ({ value: p, label: p })),
                 ]}
               />
@@ -451,7 +451,7 @@ export default function TicketsPage() {
                 value={escalate}
                 onChange={(e) => setEscalate(e.target.value)}
                 options={[
-                  { value: "", label: "Semua Level" },
+                  { value: "", label: "All Escalations" },
                   ...filterOptions.escalates.map((e) => ({ value: e, label: e })),
                 ]}
               />
@@ -467,7 +467,7 @@ export default function TicketsPage() {
                 ) : (
                   <Search size={16} />
                 )}
-                {isLoading ? "Loading..." : "Tampilkan"}
+                {isLoading ? "Loading..." : "Show Ticket"}
               </Button>
             </div>
           </div>
@@ -495,7 +495,7 @@ export default function TicketsPage() {
             columns={columns}
             data={tickets}
             isLoading={isLoading}
-            emptyMessage="Tidak ada ticket untuk filter yang dipilih."
+            emptyMessage="There are no tickets for the selected filter.."
             showExport
             exportFileName={`tickets_${dateFrom}_${dateTo}`}
             pageSize={20}
@@ -515,11 +515,11 @@ export default function TicketsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Pilih Ticket */}
             <Select
-              label="Pilih Ticket ID"
+              label="Select Ticket ID"
               value={selTicketId?.toString() ?? ""}
               onChange={(e) => setSelTicketId(Number(e.target.value))}
               options={[
-                { value: "", label: "Pilih ticket..." },
+                { value: "", label: "Select ticket..." },
                 ...tickets.map((t) => ({
                   value: t.ticketId.toString(),
                   label: `#${t.ticketId} — ${t.agent ?? "Unassigned"} — ${t.status}`,
@@ -533,7 +533,7 @@ export default function TicketsPage() {
               value={escCategory}
               onChange={(e) => setEscCategory(e.target.value)}
               options={[
-                { value: "", label: "Pilih category..." },
+                { value: "", label: "Select category..." },
                 ...escCategories.map((c) => ({ value: c, label: c })),
               ]}
             />
@@ -547,7 +547,7 @@ export default function TicketsPage() {
             <textarea
               value={escNote}
               onChange={(e) => setEscNote(e.target.value)}
-              placeholder="Tuliskan detail escalation..."
+              placeholder="Write down the escalation details..."
               rows={3}
               className="
                 w-full px-4 py-3 rounded-md font-body text-sm
@@ -572,7 +572,7 @@ export default function TicketsPage() {
               {isSavingEsc ? (
                 <RefreshCw size={16} className="animate-spin" />
               ) : null}
-              {isSavingEsc ? "Menyimpan..." : "💾 Simpan Escalation"}
+              {isSavingEsc ? "Saving..." : "Save"}
             </Button>
           </div>
         </Card>

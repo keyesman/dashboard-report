@@ -30,6 +30,8 @@ import {
   Ticket, CheckCircle, Clock,
   AlertCircle, BarChart2, RefreshCw
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 
 // ===========================================================================
 // TYPES
@@ -124,7 +126,7 @@ export default function AnalyticsPage() {
       setHasLoaded(true);
 
     } catch {
-      showToast.error("Gagal memuat data analytics.");
+      showToast.error("Failed to load analytics data.");
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +143,7 @@ export default function AnalyticsPage() {
       const data = await res.json();
       setBreakdown(data);
     } catch {
-      showToast.error("Gagal memuat breakdown data.");
+      showToast.error("Failed to load breakdown data.");
     }
   }, [dateFrom, dateTo]);
 
@@ -151,7 +153,7 @@ export default function AnalyticsPage() {
   return (
     <DashboardLayout
       title="Analytics"
-      description="Chart dan metrik performa tim support"
+      description="L1 team performance charts and metrics"
     >
       {/* =================================================================
           FILTER PERIODE — 1 baris lurus
@@ -159,14 +161,14 @@ export default function AnalyticsPage() {
       <Card className="mb-6">
         <div className="flex items-end gap-4">
           <Input
-            label="Dari Tanggal"
+            label="From"
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             className="w-44"
           />
           <Input
-            label="Sampai Tanggal"
+            label="To"
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
@@ -192,7 +194,7 @@ export default function AnalyticsPage() {
         <div className="flex flex-col items-center justify-center py-20 text-[var(--text-secondary)]">
           <BarChart2 size={48} className="opacity-20 mb-3" />
           <p className="font-body text-sm">
-            Pilih periode dan klik "Show Analytics"
+          Select period and click "Show Analytics""
           </p>
         </div>
       )}
@@ -219,15 +221,15 @@ export default function AnalyticsPage() {
               icon={<AlertCircle size={18} />}
             />
             <MetricCard
-              title="AVG FRT"
+              title="AVG First Response Time"
               value={secondsToHHMMSS(metrics?.avgFrtSeconds ?? 0)}
-              subtitle={`Dari ${metrics?.ticketsWithFrt ?? 0} ticket`}
+              subtitle={`of ${metrics?.ticketsWithFrt ?? 0} tickets`}
               icon={<Clock size={18} />}
             />
             <MetricCard
-              title="AVG Resolution"
+              title="AVG Resolution Time"
               value={secondsToHHMMSS(metrics?.avgRtSeconds ?? 0)}
-              subtitle={`Dari ${metrics?.ticketsResolved ?? 0} ticket`}
+              subtitle={`of ${metrics?.ticketsResolved ?? 0} tickets`}
               icon={<Clock size={18} />}
             />
           </div>
@@ -237,7 +239,7 @@ export default function AnalyticsPage() {
               =============================================================== */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>📈 Total Tickets per Hari</CardTitle>
+              <CardTitle>📈 Total Tickets per Day</CardTitle>
             </CardHeader>
             <CardContent>
               {volume.length > 0 ? (
@@ -275,7 +277,7 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               ) : (
                 <p className="text-center text-sm text-[var(--text-secondary)] py-10">
-                  Tidak ada data untuk periode ini.
+                  There is no data for this period.
                 </p>
               )}
             </CardContent>
@@ -286,7 +288,7 @@ export default function AnalyticsPage() {
               =============================================================== */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>⏱️ AVG FRT per Hari (menit)</CardTitle>
+              <CardTitle>⏱️ AVG FRT per Day (minute)</CardTitle>
             </CardHeader>
             <CardContent>
               {frtTrend.length > 0 ? (
@@ -324,7 +326,7 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               ) : (
                 <p className="text-center text-sm text-[var(--text-secondary)] py-10">
-                  Tidak ada data FRT untuk periode ini.
+                  There is no data for this period.
                 </p>
               )}
             </CardContent>
@@ -335,27 +337,43 @@ export default function AnalyticsPage() {
               Vertikal: label di bawah, bar tumbuh ke atas
               =============================================================== */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-3">
-                <CardTitle>▪ Breakdown Ticket</CardTitle>
-                {/* Dropdown pilih breakdown field */}
-                <Select
-                  value={breakdownField}
-                  onChange={(e) => {
-                    setBreakdownField(e.target.value);
-                    fetchBreakdown(e.target.value);
-                  }}
-                  options={[
-                    { value: "agent",    label: "By Agent"    },
-                    { value: "service",  label: "By Service"  },
-                    { value: "type",     label: "By Type"     },
-                    { value: "priority", label: "By Priority" },
-                    { value: "escalate", label: "By Escalate" },
-                  ]}
-                  className="w-40"
-                />
-              </div>
-            </CardHeader>
+          <CardHeader>
+  <div className="flex items-start justify-between flex-wrap gap-3">
+    <CardTitle>▪ Breakdown Ticket</CardTitle>
+
+    {/* Pill buttons — ganti dropdown */}
+    <div className="flex flex-wrap gap-2">
+      {[
+        { value: "agent",    label: "Agent"    },
+        { value: "service",  label: "Service"  },
+        { value: "type",     label: "Type"     },
+        { value: "priority", label: "Priority" },
+        { value: "escalate", label: "Escalate" },
+      ].map((option) => (
+        <button
+          key={option.value}
+          onClick={() => {
+            setBreakdownField(option.value);
+            fetchBreakdown(option.value);
+          }}
+          className={cn(
+            // Base pill styles
+            "px-3 py-1.5 rounded-sm text-xs font-semibold font-body",
+            "border transition-all duration-150 cursor-pointer",
+            // Active state — mint green
+            breakdownField === option.value
+              ? "bg-primary-light text-primary border-primary/20"
+              : // Inactive state — abu
+                "bg-[var(--surface-muted)] text-[var(--text-secondary)] border-[var(--border-default)] hover:text-primary hover:bg-primary-light hover:border-primary/20"
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  </div>
+</CardHeader>
+
             <CardContent>
               {breakdown.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
@@ -404,7 +422,7 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               ) : (
                 <p className="text-center text-sm text-[var(--text-secondary)] py-10">
-                  Tidak ada data untuk breakdown ini.
+                  There is no data for this period.
                 </p>
               )}
             </CardContent>

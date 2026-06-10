@@ -391,11 +391,11 @@ export default function SettingsPage() {
   // ===========================================================================
   const handleSync = async () => {
     if (!syncDateFrom || !syncDateTo) {
-      showToast.warning("Pilih date range dulu!");
+      showToast.warning("Select the date range first!");
       return;
     }
     if (syncDateFrom > syncDateTo) {
-      showToast.warning("Tanggal mulai tidak boleh lebih besar dari tanggal selesai!");
+      showToast.warning("The start date cannot be greater than the end date!");
       return;
     }
 
@@ -418,15 +418,15 @@ export default function SettingsPage() {
       showToast.dismiss(toastId);
 
       if (data.success) {
-        showToast.success("Sync berhasil!", `${data.totalSynced} ticket berhasil di-sync.`);
+        showToast.success("Sync successfull!", `${data.totalSynced} ticket successfully synced.`);
       } else {
-        showToast.error("Sync gagal!", data.errorMsg ?? "Unknown error");
+        showToast.error("Sync failed!", data.errorMsg ?? "Unknown error");
       }
 
       fetchSyncLogs();
     } catch {
       showToast.dismiss(toastId);
-      showToast.error("Sync gagal!", "Terjadi kesalahan server.");
+      showToast.error("Sync failed!", "A server error occurred.");
     } finally {
       setIsSyncing(false);
     }
@@ -438,7 +438,7 @@ export default function SettingsPage() {
   return (
     <DashboardLayout
       title="Settings"
-      description="Kelola shift, escalation categories, user, dan sync data"
+      description="Manage shifts, escalation categories, users, and sync data"
     >
       {/* TAB NAVIGATION */}
       <div className="flex gap-1 mb-6 bg-[var(--surface-muted)] p-1 rounded-md w-fit">
@@ -486,7 +486,7 @@ export default function SettingsPage() {
             {isLoadShift ? (
               <p className="text-sm text-[var(--text-secondary)]">Loading...</p>
             ) : shifts.length === 0 ? (
-              <p className="text-sm text-[var(--text-secondary)]">Belum ada shift.</p>
+              <p className="text-sm text-[var(--text-secondary)]">Shift not available</p>
             ) : (
               <div className="space-y-2">
                 {shifts.map((shift) => (
@@ -545,7 +545,7 @@ export default function SettingsPage() {
             <div className="mt-4 flex justify-end">
               <Button onClick={handleAddShift} disabled={isAddShift} size="sm">
                 {isAddShift ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
-                Tambah Shift
+                Add Shift
               </Button>
             </div>
           </Card>
@@ -569,7 +569,7 @@ export default function SettingsPage() {
             {isLoadCat ? (
               <p className="text-sm text-[var(--text-secondary)]">Loading...</p>
             ) : categories.length === 0 ? (
-              <p className="text-sm text-[var(--text-secondary)]">Belum ada categories.</p>
+              <p className="text-sm text-[var(--text-secondary)]">Category not available.</p>
             ) : (
               <div className="space-y-2">
                 {categories.map((cat) => (
@@ -607,7 +607,7 @@ export default function SettingsPage() {
           <Card>
             <h3 className="font-headline font-semibold text-sm text-[var(--text-primary)] mb-4">
               <Plus size={14} className="inline mr-1" />
-              Tambah Category Baru
+              Add Category
             </h3>
             <div className="flex gap-3">
               <Input
@@ -642,7 +642,7 @@ export default function SettingsPage() {
             {isLoadUser ? (
               <p className="text-sm text-[var(--text-secondary)]">Loading...</p>
             ) : users.length === 0 ? (
-              <p className="text-sm text-[var(--text-secondary)]">Belum ada users.</p>
+              <p className="text-sm text-[var(--text-secondary)]">User not found.</p>
             ) : (
               <div className="space-y-2">
                 {users.map((user) => (
@@ -692,7 +692,7 @@ export default function SettingsPage() {
                     {resetUserId === user.id && (
                       <div className="mt-1 p-3 bg-[var(--bg-card)] border border-[var(--border-default)] rounded-md">
                         <p className="font-body text-xs text-[var(--text-secondary)] mb-3">
-                          Reset password untuk <strong>{user.name}</strong>
+                          Reset password for <strong>{user.name}</strong>
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                           <Input label="Password Baru"        type="password" placeholder="Min. 8 karakter" value={resetPass}    onChange={(e) => setResetPass(e.target.value)} />
@@ -703,11 +703,11 @@ export default function SettingsPage() {
                             variant="ghost" size="sm"
                             onClick={() => { setResetUserId(null); setResetPass(""); setResetConfirm(""); }}
                           >
-                            Batal
+                            Cancel
                           </Button>
                           <Button size="sm" onClick={handleResetPassword}>
                             <KeyRound size={14} />
-                            Simpan Password
+                            Save Password
                           </Button>
                         </div>
                       </div>
@@ -721,7 +721,7 @@ export default function SettingsPage() {
           <Card>
             <h3 className="font-headline font-semibold text-sm text-[var(--text-primary)] mb-4">
               <Plus size={14} className="inline mr-1" />
-              Tambah User Baru
+              Add User
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Input label="Nama"     placeholder="John Doe"         value={newName}     onChange={(e) => setNewName(e.target.value)} />
@@ -741,7 +741,7 @@ export default function SettingsPage() {
             <div className="mt-4 flex justify-end">
               <Button onClick={handleAddUser} disabled={isAddUser} size="sm">
                 {isAddUser ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
-                Tambah User
+                Save
               </Button>
             </div>
           </Card>
@@ -757,18 +757,18 @@ export default function SettingsPage() {
             <div className="flex items-center gap-2 mb-4">
               <Database size={16} className="text-primary" />
               <h2 className="font-headline font-semibold text-[var(--text-primary)]">
-                Sync Data dari Chatwoot
+                Sync Data from Chatwoot
               </h2>
             </div>
             <p className="font-body text-sm text-[var(--text-secondary)] mb-6">
-              Fetch dan simpan data ticket dari Chatwoot API ke database lokal.
-              Pilih date range yang ingin di-sync.
+              Fetch and save ticket data from Chatwoot API to local database.
+              Select the date range you want to sync.
             </p>
 
             {/* Date Range */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <Input label="Dari Tanggal"    type="date" value={syncDateFrom} onChange={(e) => setSyncDateFrom(e.target.value)} disabled={isSyncing} />
-              <Input label="Sampai Tanggal"  type="date" value={syncDateTo}   onChange={(e) => setSyncDateTo(e.target.value)}   disabled={isSyncing} />
+              <Input label="From"    type="date" value={syncDateFrom} onChange={(e) => setSyncDateFrom(e.target.value)} disabled={isSyncing} />
+              <Input label="To"  type="date" value={syncDateTo}   onChange={(e) => setSyncDateTo(e.target.value)}   disabled={isSyncing} />
             </div>
 
             {/* Quick Range Buttons */}
@@ -816,9 +816,9 @@ export default function SettingsPage() {
             {/* Sync Button */}
             <Button onClick={handleSync} disabled={isSyncing} size="lg" className="w-full gap-2">
               {isSyncing ? (
-                <><RefreshCw size={18} className="animate-spin" /> Syncing... Mohon tunggu</>
+                <><RefreshCw size={18} className="animate-spin" /> Syncing... Please wait</>
               ) : (
-                <><RefreshCw size={18} /> Mulai Sync</>
+                <><RefreshCw size={18} /> Start Sync</>
               )}
             </Button>
 
@@ -826,7 +826,7 @@ export default function SettingsPage() {
             {isSyncing && (
               <div className="mt-4 bg-info/10 border border-info/20 rounded-md px-4 py-3">
                 <p className="font-body text-sm text-info">
-                  ⏳ Sync sedang berjalan... Proses ini bisa memakan waktu beberapa menit. Jangan tutup halaman ini.
+                  ⏳ Sync is in progress... This process may take a few minutes. Do not close this page.
                 </p>
               </div>
             )}
@@ -842,9 +842,9 @@ export default function SettingsPage() {
                       <CheckCircle size={20} className="text-success" />
                     </div>
                     <div>
-                      <p className="font-headline font-semibold text-[var(--text-primary)]">Sync Berhasil!</p>
+                      <p className="font-headline font-semibold text-[var(--text-primary)]">Sync Successful!</p>
                       <p className="font-body text-sm text-[var(--text-secondary)]">
-                        {syncResult.totalSynced} ticket berhasil di-sync ke database.
+                        {syncResult.totalSynced} ticket successfully synced to database.
                       </p>
                     </div>
                   </>
@@ -854,7 +854,7 @@ export default function SettingsPage() {
                       <XCircle size={20} className="text-error" />
                     </div>
                     <div>
-                      <p className="font-headline font-semibold text-[var(--text-primary)]">Sync Gagal</p>
+                      <p className="font-headline font-semibold text-[var(--text-primary)]">Sync Failed</p>
                       <p className="font-body text-sm text-error">{syncResult.errorMsg ?? "Unknown error"}</p>
                     </div>
                   </>
@@ -868,7 +868,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="text-primary" />
-                <h3 className="font-headline font-semibold text-[var(--text-primary)]">Riwayat Sync</h3>
+                <h3 className="font-headline font-semibold text-[var(--text-primary)]">Sync History</h3>
               </div>
               <Button variant="ghost" size="sm" onClick={fetchSyncLogs} disabled={isLoadLogs}>
                 <RefreshCw size={14} className={isLoadLogs ? "animate-spin" : ""} />
@@ -878,7 +878,7 @@ export default function SettingsPage() {
             {isLoadLogs ? (
               <p className="text-sm text-[var(--text-secondary)]">Loading...</p>
             ) : syncLogs.length === 0 ? (
-              <p className="text-sm text-[var(--text-secondary)]">Belum ada riwayat sync.</p>
+              <p className="text-sm text-[var(--text-secondary)]">Sync history not available.</p>
             ) : (
               <div className="space-y-2">
                 {syncLogs.map((log) => (

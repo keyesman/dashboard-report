@@ -113,12 +113,12 @@ export default function Sidebar({ user, onLogout }: SidebarProps) {
         <div className="flex items-center gap-2">
           {/* Logo icon */}
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-            <span className="text-white font-headline font-bold text-sm">C</span>
+            <span className="text-white font-headline font-bold text-sm">L1</span>
           </div>
           {/* Brand name */}
           <div>
             <p className="font-headline font-bold text-sm text-[var(--text-primary)]">
-              Chatwoot
+              Reporting
             </p>
             <p className="font-body text-xs text-[var(--text-secondary)]">
               Dashboard
