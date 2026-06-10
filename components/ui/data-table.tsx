@@ -5,10 +5,9 @@
 // Features:
 // - Sorting (klik header untuk sort asc/desc)
 // - Pagination (next/prev, pilih jumlah row per halaman)
-// - Column visibility
 // - Empty state
 // - Loading skeleton
-// - Export CSV
+// - Export CSV (dengan proper escaping & BOM untuk Excel)
 // - Dark mode support
 //
 // Dipakai untuk:
@@ -45,50 +44,70 @@ import {
 // TYPES
 // ===========================================================================
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];  // Definisi kolom
-  data: TData[];                         // Data rows
-  isLoading?: boolean;                   // Loading state
-  emptyMessage?: string;                 // Pesan kalau data kosong
-  showExport?: boolean;                  // Tampilkan tombol export CSV
-  exportFileName?: string;               // Nama file CSV saat export
-  pageSize?: number;                     // Jumlah row per halaman (default: 10)
+  columns        : ColumnDef<TData, TValue>[];        // Definisi kolom
+  data           : TData[];                            // Data rows
+  isLoading?     : boolean;                            // Loading state
+  emptyMessage?  : string;                             // Pesan kalau data kosong
+  showExport?    : boolean;                            // Tampilkan tombol export CSV
+  exportFileName?: string;                             // Nama file CSV saat export
+  exportData?    : Record<string, unknown>[];          // Data khusus untuk export (optional)
+  pageSize?      : number;                             // Jumlah row per halaman (default: 10)
 }
 
 // ===========================================================================
 // EXPORT TO CSV — Helper function untuk export data ke file CSV
+//
+// Fix yang dilakukan:
+// 1. Join rows dengan newline, bukan "" yang bikin semua jadi 1 baris
+// 2. Proper escape untuk koma, quotes, newline dalam value
+// 3. Tambah BOM supaya Excel baca UTF-8 dengan benar
+// 4. Support exportData prop untuk format custom
 // ===========================================================================
-function exportToCSV<TData>(data: TData[], fileName: string) {
+// ===========================================================================
+// EXPORT TO CSV — Menggunakan library SheetJS (xlsx)
+// Handle semua edge case otomatis: newline, koma, quotes, special chars
+// ===========================================================================
+function exportToCSV(data: Record<string, unknown>[], fileName: string) {
   if (!data.length) return;
 
-  // Ambil headers dari keys object pertama
-  const headers = Object.keys(data[0] as object);
+  const XLSX = require("xlsx");
 
-  // Convert setiap row ke CSV string
-  const csvRows = [
-    headers.join(","), // Header row
-    ...data.map((row) =>
-      headers
-        .map((header) => {
-          // Escape nilai yang mengandung koma atau quotes
-          const value = (row as Record<string, unknown>)[header];
-          const stringValue = value === null || value === undefined ? "" : String(value);
-          return stringValue.includes(",") || stringValue.includes('"')
-            ? `"${stringValue.replace(/"/g, '""')}"`
-            : stringValue;
-        })
-        .join(",")
-    ),
-  ];
+  // ===========================================================================
+  // Sanitize data:
+  // - Header: ganti spasi dengan underscore
+  // - Value: bersihkan newline supaya cell rapi
+  // ===========================================================================
+  const sanitizedData = data.map((row) => {
+    const newRow: Record<string, unknown> = {};
+    Object.entries(row).forEach(([key, value]) => {
+      const safeKey = key.replace(/ /g, "_");
 
-  // Buat blob & trigger download
-  const blob = new Blob([csvRows.join("")], { type: "text/csv;charset=utf-8;" });
-  const url  = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href     = url;
-  link.download = `${fileName}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+      if (typeof value === "string") {
+        newRow[safeKey] = value
+          .replace(`/\r?
+/g`, " ")
+          .replace(`/\r/g`, " ")
+          .trim();
+      } else {
+        newRow[safeKey] = value;
+      }
+    });
+    return newRow;
+  });
+
+  // Buat worksheet & workbook
+  const worksheet = XLSX.utils.json_to_sheet(sanitizedData);
+  const workbook  = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Tickets");
+
+  // Export sebagai .xlsx — bukan .csv
+  // Format xlsx tidak punya masalah pemisah kolom
+  XLSX.writeFile(workbook, `${fileName}.xlsx`);
 }
+
+
+
+
 
 // ===========================================================================
 // LOADING SKELETON — Tampil saat data sedang di-fetch
@@ -115,12 +134,14 @@ function TableSkeleton({ columns }: { columns: number }) {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  isLoading = false,
-  emptyMessage = "Tidak ada data.",
-  showExport = false,
+  isLoading     = false,
+  emptyMessage  = "No data available.",
+  showExport    = false,
   exportFileName = "export",
-  pageSize = 10,
+  exportData,
+  pageSize      = 10,
 }: DataTableProps<TData, TValue>) {
+
   // Sorting state — kolom mana yang di-sort & arahnya
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -130,11 +151,11 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state          : { sorting },
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getCoreRowModel       : getCoreRowModel(),
+    getSortedRowModel     : getSortedRowModel(),
+    getPaginationRowModel : getPaginationRowModel(),
     initialState: {
       pagination: { pageSize }, // Set default page size
     },
@@ -142,20 +163,27 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="flex flex-col gap-3">
+
       {/* ===================================================================
           TOOLBAR — Export button (optional)
+          Kalau exportData ada → pakai exportData (data yang sudah diformat)
+          Kalau tidak → pakai data mentah
           =================================================================== */}
       {showExport && data.length > 0 && (
         <div className="flex justify-end">
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => exportToCSV(data, exportFileName)}
+            onClick={() => exportToCSV(
+              exportData ?? (data as Record<string, unknown>[]),
+              exportFileName
+            )}
             className="gap-2"
           >
             <Download size={14} />
-            Export CSV
+            Export Excel
           </Button>
+
         </div>
       )}
 
@@ -164,6 +192,7 @@ export function DataTable<TData, TValue>({
           =================================================================== */}
       <div className="w-full overflow-x-auto rounded-md border border-[var(--border-default)]">
         <table className="w-full text-sm">
+
           {/* ================================================================
               TABLE HEADER
               ================================================================ */}
@@ -181,7 +210,8 @@ export function DataTable<TData, TValue>({
                       "font-headline text-xs font-semibold uppercase tracking-wide",
                       "text-[var(--text-secondary)]",
                       // Cursor pointer kalau kolom bisa di-sort
-                      header.column.getCanSort() && "cursor-pointer select-none hover:text-[var(--text-primary)]"
+                      header.column.getCanSort() &&
+                        "cursor-pointer select-none hover:text-[var(--text-primary)]"
                     )}
                     onClick={header.column.getToggleSortingHandler()}
                   >
@@ -265,16 +295,19 @@ export function DataTable<TData, TValue>({
           =================================================================== */}
       {!isLoading && data.length > 0 && (
         <div className="flex items-center justify-between gap-4 flex-wrap">
+
           {/* Info jumlah data */}
           <p className="font-body text-xs text-[var(--text-secondary)]">
             Showing{" "}
             <span className="font-semibold text-[var(--text-primary)]">
-              {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+              {table.getState().pagination.pageIndex *
+                table.getState().pagination.pageSize + 1}
             </span>{" "}
             -{" "}
             <span className="font-semibold text-[var(--text-primary)]">
               {Math.min(
-                (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+                (table.getState().pagination.pageIndex + 1) *
+                  table.getState().pagination.pageSize,
                 data.length
               )}
             </span>{" "}
@@ -287,12 +320,13 @@ export function DataTable<TData, TValue>({
 
           {/* Pagination buttons */}
           <div className="flex items-center gap-1">
+
             {/* First page */}
             <button
               onClick={() => table.setPageIndex(0)}
               disabled={!table.getCanPreviousPage()}
               className={cn(
-                "p-1.5 rounded-md transition-colors",
+                "p-1.5 rounded-md transition-colors cursor-pointer",
                 "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]",
                 "disabled:opacity-30 disabled:cursor-not-allowed"
               )}
@@ -306,7 +340,7 @@ export function DataTable<TData, TValue>({
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
               className={cn(
-                "p-1.5 rounded-md transition-colors",
+                "p-1.5 rounded-md transition-colors cursor-pointer",
                 "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]",
                 "disabled:opacity-30 disabled:cursor-not-allowed"
               )}
@@ -332,7 +366,7 @@ export function DataTable<TData, TValue>({
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
               className={cn(
-                "p-1.5 rounded-md transition-colors",
+                "p-1.5 rounded-md transition-colors cursor-pointer",
                 "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]",
                 "disabled:opacity-30 disabled:cursor-not-allowed"
               )}
@@ -346,7 +380,7 @@ export function DataTable<TData, TValue>({
               onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
               className={cn(
-                "p-1.5 rounded-md transition-colors",
+                "p-1.5 rounded-md transition-colors cursor-pointer",
                 "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]",
                 "disabled:opacity-30 disabled:cursor-not-allowed"
               )}
@@ -354,9 +388,11 @@ export function DataTable<TData, TValue>({
             >
               <ChevronsRight size={16} />
             </button>
+
           </div>
         </div>
       )}
+
     </div>
   );
 }

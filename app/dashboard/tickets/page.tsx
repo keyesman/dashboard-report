@@ -552,11 +552,48 @@ export default function TicketsPage() {
             columns={columns}
             data={tickets}
             isLoading={isLoading}
-            emptyMessage="There are no tickets for the selected filter.."
+            emptyMessage="No tickets found for the selected filters."
             showExport
             exportFileName={`tickets_${dateFrom}_${dateTo}`}
+            exportData={tickets.map((t) => ({
+              "Ticket ID"           : t.ticketId,
+              "Created_At": new Date(t.createdAt).toLocaleDateString("en-US", {
+                month: "2-digit",
+                day  : "2-digit",
+                year : "numeric",
+              }),              
+              "Status"              : t.status,
+              "Agent"               : t.agent               ?? "-",
+              "Service"             : t.service             ?? "-",
+              "Priority"            : t.priority            ?? "-",
+              "Escalate"            : t.escalate            ?? "-",
+              "Type"                : t.type                ?? "-",
+              "FRT"                 : secondsToHHMMSS(t.frtSeconds),
+              "Resolution Time"     : secondsToHHMMSS(t.resolutionTimeSeconds),
+              "Company"             : t.company             ?? "-",
+              "Customer"            : t.customer            ?? "-",
+              "Phone"               : t.phone               ?? "-",
+              "Escalation Category" : t.escalationCategory  ?? "-",
+              "Escalation Note"     : t.escalationNote      ?? "-",
+              "Last Note": t.lastNote
+                  ? t.lastNote
+                      .replace(`/\r?
+                /g`, " ")
+                      .replace(`/\r/g, " ")
+                      .replace(/
+                /g`, " ")
+                      .replace(`/\
+                /g`, " ")
+                      .trim()
+                  : "-",
+
+              "Tags"                : t.rawLabels
+                                        ? t.rawLabels.split(",").map((l) => l.trim()).join(" | ")
+                                        : "-",
+            }))}
             pageSize={20}
           />
+
         </Card>
       )}
 
