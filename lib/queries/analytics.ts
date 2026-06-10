@@ -298,3 +298,75 @@ export async function getMonthlyVolume(year: number): Promise<MonthlyVolumeRow[]
     total,
   }));
 }
+
+// ===========================================================================
+// GET MONTH OVER MONTH CHANGE — Hitung % perubahan bulan ini vs bulan lalu
+// Handle cross-year comparison (Jan 2026 vs Des 2025)
+// ===========================================================================
+export interface MonthOverMonthResult {
+  currentMonth : number; // Bulan ini (1-12)
+  currentYear  : number; // Tahun ini
+  currentTotal : number; // Total ticket bulan ini
+  prevMonth    : number; // Bulan lalu (1-12)
+  prevYear     : number; // Tahun lalu (bisa beda tahun)
+  prevTotal    : number; // Total ticket bulan lalu
+  changePercent: number; // % perubahan (positif = naik, negatif = turun)
+  direction    : "up" | "down" | "neutral"; // Arah perubahan
+}
+
+export async function getMonthOverMonthChange(
+  year : number,
+  month: number
+): Promise<MonthOverMonthResult> {
+  // Hitung bulan & tahun sebelumnya
+  // Kalau bulan 1 (Januari), bulan sebelumnya Desember tahun lalu
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear  = month === 1 ? year - 1 : year;
+
+  // Fetch ticket bulan ini & bulan lalu secara parallel
+  const [currentTickets, prevTickets] = await Promise.all([
+    prisma.conversation.count({
+      where: {
+        createdAt: {
+          gte: new Date(`${year}-${String(month).padStart(2, "0")}-01T00:00:00.000Z`),
+          lte: new Date(`${year}-${String(month).padStart(2, "0")}-31T23:59:59.999Z`),
+        },
+      },
+    }),
+    prisma.conversation.count({
+      where: {
+        createdAt: {
+          gte: new Date(`${prevYear}-${String(prevMonth).padStart(2, "0")}-01T00:00:00.000Z`),
+          lte: new Date(`${prevYear}-${String(prevMonth).padStart(2, "0")}-31T23:59:59.999Z`),
+        },
+      },
+    }),
+  ]);
+
+  // Hitung % perubahan
+  // Kalau bulan lalu 0 dan bulan ini ada data → 100% kenaikan
+  let changePercent = 0;
+  if (prevTickets > 0) {
+    changePercent = Math.round(
+      ((currentTickets - prevTickets) / prevTickets) * 100
+    );
+  } else if (currentTickets > 0) {
+    changePercent = 100;
+  }
+
+  // Tentukan arah perubahan
+  const direction =
+    changePercent > 0 ? "up" :
+    changePercent < 0 ? "down" : "neutral";
+
+  return {
+    currentMonth : month,
+    currentYear  : year,
+    currentTotal : currentTickets,
+    prevMonth,
+    prevYear,
+    prevTotal    : prevTickets,
+    changePercent,
+    direction,
+  };
+}

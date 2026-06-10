@@ -21,7 +21,8 @@ import {
   CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from "recharts";
-import { Ticket, BarChart2, Settings, TrendingUp } from "lucide-react";
+import { Ticket, BarChart2, Settings, TrendingUp, TrendingDown, Minus } from "lucide-react";
+
 
 // ===========================================================================
 // TYPES
@@ -31,6 +32,126 @@ interface MonthlyVolumeRow {
   monthLabel: string;
   total     : number;
 }
+interface MonthOverMonthResult {
+  currentMonth : number;
+  currentYear  : number;
+  currentTotal : number;
+  prevMonth    : number;
+  prevYear     : number;
+  prevTotal    : number;
+  changePercent: number;
+  direction    : "up" | "down" | "neutral";
+}
+
+// ===========================================================================
+// CUSTOM TOOLTIP — Tampilkan total + % perubahan vs bulan sebelumnya
+// Fetch prev month data dari API supaya support cross-year comparison
+// ===========================================================================
+const CustomBarTooltip = ({
+  active,
+  payload,
+  label,
+  selectedYear,
+  monthlyVolume,
+  prevYearVolume, // Data tahun sebelumnya untuk cross-year comparison
+}: {
+  active?         : boolean;
+  payload?        : { value: number }[];
+  label?          : string;
+  selectedYear    : number;
+  monthlyVolume   : { month: number; monthLabel: string; total: number }[];
+  prevYearVolume  : { month: number; monthLabel: string; total: number }[];
+}) => {
+  if (!active || !payload || !payload.length) return null;
+
+  // Cari data bulan ini
+  const currentData = monthlyVolume.find((m) => m.monthLabel === label);
+  if (!currentData) return null;
+
+  // Tentukan bulan & tahun sebelumnya
+  const prevMonth = currentData.month === 1 ? 12 : currentData.month - 1;
+  const prevYear  = currentData.month === 1 ? selectedYear - 1 : selectedYear;
+
+  // Ambil data bulan sebelumnya
+  // Kalau cross-year (bulan 1), ambil dari prevYearVolume
+  // Kalau same year, ambil dari monthlyVolume
+  const prevData = currentData.month === 1
+    ? prevYearVolume.find((m) => m.month === prevMonth)
+    : monthlyVolume.find((m) => m.month === prevMonth);
+
+  const currentTotal = currentData.total;
+  const prevTotal    = prevData?.total ?? 0;
+
+  // Hitung % perubahan
+  let changePercent = 0;
+  if (prevTotal > 0) {
+    changePercent = Math.round(((currentTotal - prevTotal) / prevTotal) * 100);
+  } else if (currentTotal > 0) {
+    changePercent = 100;
+  }
+
+  const direction =
+    changePercent > 0 ? "up" :
+    changePercent < 0 ? "down" : "neutral";
+
+  // Label bulan
+  const monthLabels = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const prevMonthLabel = monthLabels[prevMonth - 1];
+
+  return (
+    <div
+      style={{
+        background  : "var(--bg-card)",
+        border      : "1px solid var(--border-default)",
+        borderRadius: "8px",
+        fontSize    : "12px",
+        padding     : "10px 14px",
+        boxShadow   : "var(--shadow-medium)",
+      }}
+    >
+      {/* Label bulan */}
+      <p style={{
+        color       : "#10B981",
+        fontWeight  : "600",
+        marginBottom: "6px",
+      }}>
+        {label} {selectedYear}
+      </p>
+
+      {/* Total ticket */}
+      <p style={{ color: "var(--text-primary)", marginBottom: "6px" }}>
+        Total: <strong>{currentTotal.toLocaleString()}</strong> tickets
+      </p>
+
+      {/* Divider */}
+      <div style={{
+        borderTop   : "1px solid var(--border-default)",
+        marginBottom: "6px",
+      }} />
+
+      {/* % perubahan */}
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <span style={{ color: "var(--text-secondary)" }}>
+          vs {prevMonthLabel} {prevYear}:
+        </span>
+        <strong style={{
+          color: direction === "up"
+            ? "#10B981"
+            : direction === "down"
+            ? "#EF4444"
+            : "var(--text-secondary)",
+        }}>
+          {direction === "up" ? "▲" : direction === "down" ? "▼" : "●"}{" "}
+          {direction === "up" ? "+" : ""}{changePercent}%
+        </strong>
+        <span style={{ color: "var(--text-secondary)", fontSize: "11px" }}>
+          ({prevTotal} → {currentTotal})
+        </span>
+      </div>
+    </div>
+  );
+};
+
 
 // ===========================================================================
 // OVERVIEW PAGE COMPONENT
@@ -47,6 +168,29 @@ export default function DashboardPage() {
   );
   const [monthlyVolume,   setMonthlyVolume]   = useState<MonthlyVolumeRow[]>([]);
   const [isLoadingChart,  setIsLoadingChart]  = useState(false);
+  const [momChange, setMomChange] = useState<MonthOverMonthResult | null>(null);
+  // State untuk data tahun sebelumnya (untuk cross-year comparison)
+  const [prevYearVolume, setPrevYearVolume] = useState<MonthlyVolumeRow[]>([]);
+
+
+// ===========================================================================
+// FETCH MOM CHANGE — Hitung % perubahan bulan terpilih vs bulan sebelumnya
+// Default: bulan ini
+// ===========================================================================
+const fetchMomChange = useCallback(async (year: number) => {
+  try {
+    // Gunakan bulan ini sebagai referensi
+    const month = new Date().getMonth() + 1;
+    const res   = await fetch(
+      `/api/analytics/mom-change?year=${year}&month=${month}`
+    );
+    const data  = await res.json();
+    setMomChange(data);
+  } catch {
+    console.error("Failed to fetch MoM change");
+  }
+}, []);
+
 
   // ===========================================================================
   // FETCH AVAILABLE YEARS — Dipanggil sekali saat mount
@@ -72,15 +216,26 @@ export default function DashboardPage() {
   const fetchMonthlyVolume = useCallback(async (year: number) => {
     setIsLoadingChart(true);
     try {
-      const res  = await fetch(`/api/analytics/monthly-volume?year=${year}`);
-      const data = await res.json();
-      setMonthlyVolume(data);
+      // Fetch tahun ini + tahun sebelumnya secara parallel
+      const [currentRes, prevRes] = await Promise.all([
+        fetch(`/api/analytics/monthly-volume?year=${year}`),
+        fetch(`/api/analytics/monthly-volume?year=${year - 1}`),
+      ]);
+  
+      const [currentData, prevData] = await Promise.all([
+        currentRes.json(),
+        prevRes.json(),
+      ]);
+  
+      setMonthlyVolume(currentData);
+      setPrevYearVolume(prevData); // Simpan data tahun sebelumnya
     } catch {
-      showToast.error("Gagal memuat data chart.");
+      showToast.error("Failed to load chart data.");
     } finally {
       setIsLoadingChart(false);
     }
   }, []);
+  
 
   // Fetch years saat pertama mount
   useEffect(() => {
@@ -90,7 +245,9 @@ export default function DashboardPage() {
   // Fetch chart saat selectedYear berubah
   useEffect(() => {
     fetchMonthlyVolume(selectedYear);
-  }, [selectedYear, fetchMonthlyVolume]);
+    fetchMomChange(selectedYear); // Tambah ini
+  }, [selectedYear, fetchMonthlyVolume, fetchMomChange]);
+  
 
   // ===========================================================================
   // RENDER
@@ -115,7 +272,7 @@ export default function DashboardPage() {
       {/* =================================================================
           QUICK INFO CARDS
           ================================================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="hidden grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Tickets Card */}
         <Card className="flex items-start gap-4">
           <div className="w-10 h-10 bg-primary-light rounded-md flex items-center justify-center shrink-0">
@@ -243,23 +400,14 @@ export default function DashboardPage() {
                 allowDecimals={false}
               />
               <Tooltip
-                contentStyle={{
-                  background  : "var(--bg-card)",
-                  border      : "1px solid var(--border-default)",
-                  borderRadius: "8px",
-                  fontSize    : "12px",
-                  color       : "var(--text-primary)",
-                }}
-                labelStyle={{
-                  color     : "var(--text-primary)",       // Hijau mint untuk label
-                  fontWeight: "600",
-                }}
-                itemStyle={{
-                  color: "#10B981", // Text item ikut theme
-                }}
-                cursor={{ fill: "var(--surface-muted)" }}
-                formatter={(value) => [value, "Total Tickets"]}
-                labelFormatter={(label) => `${label} ${selectedYear}`}
+                content={
+                  <CustomBarTooltip
+                    selectedYear={selectedYear}
+                    monthlyVolume={monthlyVolume}
+                    prevYearVolume={prevYearVolume}
+                  />
+                }
+                cursor={{ fill: "var(--surface-muted)", opacity: 0.5 }}
               />
               <Bar
                 dataKey="total"
@@ -286,51 +434,94 @@ export default function DashboardPage() {
         )}
 
         {/* Summary text di bawah chart */}
-        {!isLoadingChart && monthlyVolume.some((m) => m.total > 0) && (
-          <div className="mt-4 pt-4 border-t border-[var(--border-default)] flex items-center gap-6">
-            {/* Total tahun ini */}
-            <div>
-              <p className="font-body text-xs text-[var(--text-secondary)]">
-                Total {selectedYear}
-              </p>
-              <p className="font-headline font-bold text-lg text-[var(--text-primary)]">
-                {monthlyVolume.reduce((sum, m) => sum + m.total, 0).toLocaleString("id-ID")}
-                <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
-                  tickets
-                </span>
-              </p>
-            </div>
+{!isLoadingChart && monthlyVolume.some((m) => m.total > 0) && (
+  <div className="mt-4 pt-4 border-t border-[var(--border-default)] flex items-center gap-6 flex-wrap">
 
-            {/* Bulan tertinggi */}
-            <div>
-              <p className="font-body text-xs text-[var(--text-secondary)]">
-                Bulan Tertinggi
-              </p>
-              <p className="font-headline font-bold text-lg text-primary">
-                {monthlyVolume.reduce((max, m) => m.total > max.total ? m : max, monthlyVolume[0])?.monthLabel}
-                <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
-                  ({monthlyVolume.reduce((max, m) => m.total > max.total ? m : max, monthlyVolume[0])?.total.toLocaleString("id-ID")} tickets)
-                </span>
-              </p>
-            </div>
+    {/* Total tahun ini */}
+    <div>
+      <p className="font-body text-xs text-[var(--text-secondary)]">
+        Total {selectedYear}
+      </p>
+      <p className="font-headline font-bold text-lg text-[var(--text-primary)]">
+        {monthlyVolume.reduce((sum, m) => sum + m.total, 0).toLocaleString()}
+        <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
+          tickets
+        </span>
+      </p>
+    </div>
 
-            {/* Rata-rata per bulan */}
-            <div>
-              <p className="font-body text-xs text-[var(--text-secondary)]">
-                Rata-rata / Bulan
-              </p>
-              <p className="font-headline font-bold text-lg text-[var(--text-primary)]">
-                {Math.round(
-                  monthlyVolume.reduce((sum, m) => sum + m.total, 0) /
-                  monthlyVolume.filter((m) => m.total > 0).length || 0
-                ).toLocaleString("id-ID")}
-                <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
-                  tickets
-                </span>
-              </p>
-            </div>
-          </div>
-        )}
+    {/* Highest Month */}
+    <div>
+      <p className="font-body text-xs text-[var(--text-secondary)]">
+        Highest Month
+      </p>
+      <p className="font-headline font-bold text-lg text-primary">
+        {monthlyVolume.reduce((max, m) => m.total > max.total ? m : max, monthlyVolume[0])?.monthLabel}
+        <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
+          ({monthlyVolume.reduce((max, m) => m.total > max.total ? m : max, monthlyVolume[0])?.total.toLocaleString()} tickets)
+        </span>
+      </p>
+    </div>
+
+    {/* Avg per Month */}
+    <div>
+      <p className="font-body text-xs text-[var(--text-secondary)]">
+        Avg / Month
+      </p>
+      <p className="font-headline font-bold text-lg text-[var(--text-primary)]">
+        {Math.round(
+          monthlyVolume.reduce((sum, m) => sum + m.total, 0) /
+          (monthlyVolume.filter((m) => m.total > 0).length || 1)
+        ).toLocaleString()}
+        <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
+          tickets
+        </span>
+      </p>
+    </div>
+
+    {/* Month over Month Change */}
+    {momChange && (
+      <div>
+        <p className="font-body text-xs text-[var(--text-secondary)]">
+          {/* Label bulan referensi */}
+          vs{" "}
+          {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][momChange.prevMonth - 1]}
+          {" "}{momChange.prevYear}
+        </p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {/* Icon arah perubahan */}
+          {momChange.direction === "up" && (
+            <TrendingUp size={16} className="text-success" />
+          )}
+          {momChange.direction === "down" && (
+            <TrendingDown size={16} className="text-error" />
+          )}
+          {momChange.direction === "neutral" && (
+            <Minus size={16} className="text-[var(--text-secondary)]" />
+          )}
+
+          {/* % perubahan */}
+          <p className={cn(
+            "font-headline font-bold text-lg",
+            momChange.direction === "up"      ? "text-success" :
+            momChange.direction === "down"    ? "text-error"   :
+            "text-[var(--text-secondary)]"
+          )}>
+            {momChange.direction === "up" ? "+" : ""}
+            {momChange.changePercent}%
+          </p>
+
+          {/* Detail angka */}
+          <p className="font-body text-xs text-[var(--text-secondary)]">
+            ({momChange.prevTotal} → {momChange.currentTotal})
+          </p>
+        </div>
+      </div>
+    )}
+
+  </div>
+)}
+
       </Card>
     </DashboardLayout>
   );
