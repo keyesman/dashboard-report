@@ -119,39 +119,37 @@ export default function DashboardLayout({
         {title && (
           <header
             className={cn(
-              "shrink-0 px-6 py-4",
+              "shrink-0 px-3 py-3 md:px-6 md:py-4",
               "bg-[var(--bg-card)] border-b border-[var(--border-default)]",
-              // Extra top padding di mobile karena ada topbar fixed
               "pt-16 md:pt-4"
             )}
           >
-            {/* Page Title */}
-            <h1 className="font-headline text-xl font-bold text-[var(--text-primary)]">
+            <h1 className="font-headline text-lg md:text-xl font-bold text-[var(--text-primary)]">
               {title}
             </h1>
-
-            {/* Page Description — optional */}
             {description && (
-              <p className="font-body text-sm text-[var(--text-secondary)] mt-0.5">
+              <p className="font-body text-xs md:text-sm text-[var(--text-secondary)] mt-0.5">
                 {description}
               </p>
             )}
           </header>
         )}
 
+
         {/* ==================================================================
             PAGE CONTENT — Scrollable area untuk konten halaman
             ================================================================== */}
+        {/* PAGE CONTENT */}
         <main
           className={cn(
-            "flex-1 overflow-y-auto",
-            "px-6 py-6",
-            // Extra top padding di mobile kalau gak ada header title
+            "flex-1 overflow-y-auto overflow-x-hidden",
+            "px-3 py-4 md:px-6 md:py-6",
             !title && "pt-20 md:pt-6"
           )}
         >
           {children}
         </main>
+
       </div>
     </div>
   );

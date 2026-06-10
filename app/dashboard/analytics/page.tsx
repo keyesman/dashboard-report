@@ -155,28 +155,28 @@ export default function AnalyticsPage() {
       description="L1 team performance charts and metrics"
     >
       {/* =================================================================
-          FILTER PERIODE — 1 baris lurus
+          FILTER PERIODE — Responsive
           ================================================================= */}
       <Card className="mb-6">
-        <div className="flex items-end gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
           <Input
             label="From"
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            className="w-44"
+            className="w-full sm:w-44"
           />
           <Input
             label="To"
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            className="w-44"
+            className="w-full sm:w-44"
           />
           <Button
             onClick={fetchAnalytics}
             disabled={isLoading}
-            className="gap-2 mb-0.5 shrink-0 whitespace-nowrap"
+            className="gap-2 w-full sm:w-auto shrink-0 whitespace-nowrap sm:mb-0.5"
           >
             {isLoading
               ? <RefreshCw size={16} className="animate-spin" />
@@ -186,7 +186,6 @@ export default function AnalyticsPage() {
           </Button>
         </div>
       </Card>
-
 
       {/* Belum ada data */}
       {!hasLoaded && !isLoading && (
@@ -201,37 +200,40 @@ export default function AnalyticsPage() {
       {hasLoaded && (
         <>
           {/* ===============================================================
-              METRIC CARDS — Summary angka utama
-              =============================================================== */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <MetricCard
-              title="Total Tickets"
-              value={metrics?.totalTickets ?? 0}
-              icon={<Ticket size={18} />}
-            />
-            <MetricCard
-              title="Tickets Resolved"
-              value={metrics?.ticketsResolved ?? 0}
-              icon={<CheckCircle size={18} />}
-            />
-            <MetricCard
-              title="Backlog (Open)"
-              value={metrics?.backlog ?? 0}
-              icon={<AlertCircle size={18} />}
-            />
-            <MetricCard
-              title="AVG First Response Time"
-              value={secondsToHHMMSS(metrics?.avgFrtSeconds ?? 0)}
-              subtitle={`of ${metrics?.ticketsWithFrt ?? 0} tickets`}
-              icon={<Clock size={18} />}
-            />
-            <MetricCard
-              title="AVG Resolution Time"
-              value={secondsToHHMMSS(metrics?.avgRtSeconds ?? 0)}
-              subtitle={`of ${metrics?.ticketsResolved ?? 0} tickets`}
-              icon={<Clock size={18} />}
-            />
-          </div>
+            METRIC CARDS — Responsive grid
+            Mobile: 2 kolom, Desktop: 5 kolom
+            =============================================================== */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+          <MetricCard
+            title="Total Tickets"
+            value={metrics?.totalTickets ?? 0}
+            icon={<Ticket size={18} />}
+          />
+          <MetricCard
+            title="Resolved"
+            value={metrics?.ticketsResolved ?? 0}
+            icon={<CheckCircle size={18} />}
+          />
+          <MetricCard
+            title="Backlog (Open)"
+            value={metrics?.backlog ?? 0}
+            icon={<AlertCircle size={18} />}
+          />
+          <MetricCard
+            title="AVG FRT"
+            value={secondsToHHMMSS(metrics?.avgFrtSeconds ?? 0)}
+            subtitle={`of ${metrics?.ticketsWithFrt ?? 0} tickets`}
+            icon={<Clock size={18} />}
+          />
+          <MetricCard
+            title="AVG Resolution"
+            value={secondsToHHMMSS(metrics?.avgRtSeconds ?? 0)}
+            subtitle={`of ${metrics?.ticketsResolved ?? 0} tickets`}
+            icon={<Clock size={18} />}
+          />
+        </div>
+
+
 
           {/* ===============================================================
               CHART 1 — Ticket per Hari (Line Chart)
@@ -337,41 +339,38 @@ export default function AnalyticsPage() {
               =============================================================== */}
           <Card>
           <CardHeader>
-  <div className="flex items-start justify-between flex-wrap gap-3">
-    <CardTitle>▪ Breakdown Ticket</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle>▪ Breakdown Ticket</CardTitle>
+              {/* Pill buttons — scrollable di mobile */}
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {[
+                  { value: "agent",    label: "Agent"    },
+                  { value: "service",  label: "Service"  },
+                  { value: "type",     label: "Type"     },
+                  { value: "priority", label: "Priority" },
+                  { value: "escalate", label: "Escalate" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setBreakdownField(option.value);
+                      fetchBreakdown(option.value);
+                    }}
+                    className={cn(
+                      "px-3 py-1.5 rounded-sm text-xs font-semibold font-body",
+                      "border transition-all duration-150 cursor-pointer shrink-0",
+                      breakdownField === option.value
+                        ? "bg-primary-light text-primary border-primary/20"
+                        : "bg-[var(--surface-muted)] text-[var(--text-secondary)] border-[var(--border-default)] hover:text-primary hover:bg-primary-light hover:border-primary/20"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
 
-    {/* Pill buttons — ganti dropdown */}
-    <div className="flex flex-wrap gap-2">
-      {[
-        { value: "agent",    label: "Agent"    },
-        { value: "service",  label: "Service"  },
-        { value: "type",     label: "Type"     },
-        { value: "priority", label: "Priority" },
-        { value: "escalate", label: "Escalate" },
-      ].map((option) => (
-        <button
-          key={option.value}
-          onClick={() => {
-            setBreakdownField(option.value);
-            fetchBreakdown(option.value);
-          }}
-          className={cn(
-            // Base pill styles
-            "px-3 py-1.5 rounded-sm text-xs font-semibold font-body",
-            "border transition-all duration-150 cursor-pointer",
-            // Active state — mint green
-            breakdownField === option.value
-              ? "bg-primary-light text-primary border-primary/20"
-              : // Inactive state — abu
-                "bg-[var(--surface-muted)] text-[var(--text-secondary)] border-[var(--border-default)] hover:text-primary hover:bg-primary-light hover:border-primary/20"
-          )}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  </div>
-</CardHeader>
 
             <CardContent>
               {breakdown.length > 0 ? (

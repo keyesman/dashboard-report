@@ -438,82 +438,67 @@ export default function TicketsPage() {
         </button>
 
 
-        {/* Filter content — collapse/expand */}
         {filterOpen && (
           <div className="mt-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 items-end">
-              {/* Date From */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-3 items-end">
               <Input
-                label="From"
+                label="Dari Tanggal"
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
               />
-
-              {/* Date To */}
               <Input
-                label="To"
+                label="Sampai Tanggal"
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
               />
-
-              {/* Status */}
               <Select
                 label="Status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
                 options={[
-                  { value: "", label: "All Statuses" },
+                  { value: "", label: "Semua Status" },
                   ...filterOptions.statuses.map((s) => ({ value: s, label: s })),
                 ]}
               />
-
-              {/* Agent */}
               <Select
                 label="Agent"
                 value={agent}
                 onChange={(e) => setAgent(e.target.value)}
                 options={[
-                  { value: "", label: "All Agents" },
+                  { value: "", label: "Semua Agent" },
                   ...filterOptions.agents.map((a) => ({ value: a, label: a })),
                 ]}
               />
-
-              {/* Service */}
               <Select
                 label="Service"
                 value={service}
                 onChange={(e) => setService(e.target.value)}
                 options={[
-                  { value: "", label: "All Services" },
+                  { value: "", label: "Semua Service" },
                   ...filterOptions.services.map((s) => ({ value: s, label: s })),
                 ]}
               />
-
-              {/* Priority */}
               <Select
                 label="Priority"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value)}
                 options={[
-                  { value: "", label: "All Priorities" },
+                  { value: "", label: "Semua Priority" },
                   ...filterOptions.priorities.map((p) => ({ value: p, label: p })),
                 ]}
               />
-
-              {/* Escalate */}
               <Select
                 label="Escalate"
                 value={escalate}
                 onChange={(e) => setEscalate(e.target.value)}
                 options={[
-                  { value: "", label: "All Escalations" },
+                  { value: "", label: "Semua Level" },
                   ...filterOptions.escalates.map((e) => ({ value: e, label: e })),
                 ]}
               />
-
-              {/* Submit Button */}
+              {/* Button full width di mobile, auto di desktop */}
               <Button
                 onClick={fetchTickets}
                 disabled={isLoading}
@@ -524,11 +509,12 @@ export default function TicketsPage() {
                 ) : (
                   <Search size={16} />
                 )}
-                {isLoading ? "Loading..." : "Show Ticket"}
+                {isLoading ? "Loading..." : "Tampilkan"}
               </Button>
             </div>
           </div>
         )}
+
 
       </Card>
 

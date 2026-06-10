@@ -440,33 +440,36 @@ export default function SettingsPage() {
       title="Settings"
       description="Manage shifts, escalation categories, users, and sync data"
     >
-      {/* TAB NAVIGATION */}
-      <div className="flex gap-1 mb-6 bg-[var(--surface-muted)] p-1 rounded-md w-fit">
-        {tabs
-          .filter((tab) =>
-            role === "admin"
-              ? true
-              : ["shifts", "sync"].includes(tab.id) // Leader: shifts + sync
-          )
-          .map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium font-body transition-all",
-                  activeTab === tab.id
-                    ? "bg-[var(--bg-card)] text-primary shadow-subtle"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                )}
-              >
-                <Icon size={15} />
-                {tab.label}
-              </button>
-            );
-          })}
+      {/* TAB NAVIGATION — Scrollable di mobile */}
+      <div className="overflow-x-auto mb-6 pb-1">
+        <div className="flex gap-1 bg-[var(--surface-muted)] p-1 rounded-md w-max min-w-full sm:w-fit">
+          {tabs
+            .filter((tab) =>
+              role === "admin"
+                ? true
+                : ["shifts", "sync"].includes(tab.id)
+            )
+            .map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium font-body transition-all whitespace-nowrap",
+                    activeTab === tab.id
+                      ? "bg-[var(--bg-card)] text-primary shadow-subtle"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  )}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+                </button>
+              );
+            })}
+        </div>
       </div>
+
 
       {/* ===================================================================
           TAB: SHIFT CONFIG

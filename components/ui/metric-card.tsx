@@ -105,14 +105,14 @@ export function MetricCard({
       <p
         className={cn(
           "font-headline font-bold text-[var(--text-primary)] mt-2",
-          // Size berdasarkan panjang value
-          typeof value === "string" && value.length > 8
-            ? "text-2xl"   // Untuk format HH:MM:SS (panjang)
-            : "text-3xl"   // Untuk angka pendek
+          typeof value === "string" && value.length > 5
+            ? "text-xl"   // Untuk format HH:MM:SS
+            : "text-3xl"  // Untuk angka pendek
         )}
       >
         {value}
       </p>
+
 
       {/* ===================================================================
           SUBTITLE — Teks kecil opsional di bawah value

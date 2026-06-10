@@ -434,93 +434,84 @@ const fetchMomChange = useCallback(async (year: number) => {
         )}
 
         {/* Summary text di bawah chart */}
-{!isLoadingChart && monthlyVolume.some((m) => m.total > 0) && (
-  <div className="mt-4 pt-4 border-t border-[var(--border-default)] flex items-center gap-6 flex-wrap">
+        {!isLoadingChart && monthlyVolume.some((m) => m.total > 0) && (
+          <div className="mt-4 pt-4 border-t border-[var(--border-default)]">
+            {/* Grid responsive — mobile 2 kolom, desktop 4 kolom */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-    {/* Total tahun ini */}
-    <div>
-      <p className="font-body text-xs text-[var(--text-secondary)]">
-        Total {selectedYear}
-      </p>
-      <p className="font-headline font-bold text-lg text-[var(--text-primary)]">
-        {monthlyVolume.reduce((sum, m) => sum + m.total, 0).toLocaleString()}
-        <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
-          tickets
-        </span>
-      </p>
-    </div>
+              {/* Total tahun ini */}
+              <div>
+                <p className="font-body text-xs text-[var(--text-secondary)]">
+                  Total {selectedYear}
+                </p>
+                <p className="font-headline font-bold text-lg text-[var(--text-primary)]">
+                  {monthlyVolume.reduce((sum, m) => sum + m.total, 0).toLocaleString()}
+                  <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
+                    tickets
+                  </span>
+                </p>
+              </div>
 
-    {/* Highest Month */}
-    <div>
-      <p className="font-body text-xs text-[var(--text-secondary)]">
-        Highest Month
-      </p>
-      <p className="font-headline font-bold text-lg text-primary">
-        {monthlyVolume.reduce((max, m) => m.total > max.total ? m : max, monthlyVolume[0])?.monthLabel}
-        <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
-          ({monthlyVolume.reduce((max, m) => m.total > max.total ? m : max, monthlyVolume[0])?.total.toLocaleString()} tickets)
-        </span>
-      </p>
-    </div>
+              {/* Highest Month */}
+              <div>
+                <p className="font-body text-xs text-[var(--text-secondary)]">
+                  Highest Month
+                </p>
+                <p className="font-headline font-bold text-lg text-primary">
+                  {monthlyVolume.reduce((max, m) => m.total > max.total ? m : max, monthlyVolume[0])?.monthLabel}
+                  <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
+                    ({monthlyVolume.reduce((max, m) => m.total > max.total ? m : max, monthlyVolume[0])?.total.toLocaleString()} tickets)
+                  </span>
+                </p>
+              </div>
 
-    {/* Avg per Month */}
-    <div>
-      <p className="font-body text-xs text-[var(--text-secondary)]">
-        Avg / Month
-      </p>
-      <p className="font-headline font-bold text-lg text-[var(--text-primary)]">
-        {Math.round(
-          monthlyVolume.reduce((sum, m) => sum + m.total, 0) /
-          (monthlyVolume.filter((m) => m.total > 0).length || 1)
-        ).toLocaleString()}
-        <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
-          tickets
-        </span>
-      </p>
-    </div>
+              {/* Avg per Month */}
+              <div>
+                <p className="font-body text-xs text-[var(--text-secondary)]">
+                  Avg / Month
+                </p>
+                <p className="font-headline font-bold text-lg text-[var(--text-primary)]">
+                  {Math.round(
+                    monthlyVolume.reduce((sum, m) => sum + m.total, 0) /
+                    (monthlyVolume.filter((m) => m.total > 0).length || 1)
+                  ).toLocaleString()}
+                  <span className="font-body text-xs font-normal text-[var(--text-secondary)] ml-1">
+                    tickets
+                  </span>
+                </p>
+              </div>
 
-    {/* Month over Month Change */}
-    {momChange && (
-      <div>
-        <p className="font-body text-xs text-[var(--text-secondary)]">
-          {/* Label bulan referensi */}
-          vs{" "}
-          {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][momChange.prevMonth - 1]}
-          {" "}{momChange.prevYear}
-        </p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          {/* Icon arah perubahan */}
-          {momChange.direction === "up" && (
-            <TrendingUp size={16} className="text-success" />
-          )}
-          {momChange.direction === "down" && (
-            <TrendingDown size={16} className="text-error" />
-          )}
-          {momChange.direction === "neutral" && (
-            <Minus size={16} className="text-[var(--text-secondary)]" />
-          )}
+              {/* Month over Month */}
+              {momChange && (
+                <div>
+                  <p className="font-body text-xs text-[var(--text-secondary)]">
+                    vs{" "}
+                    {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][momChange.prevMonth - 1]}
+                    {" "}{momChange.prevYear}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    {momChange.direction === "up"      && <TrendingUp   size={16} className="text-success" />}
+                    {momChange.direction === "down"    && <TrendingDown size={16} className="text-error"   />}
+                    {momChange.direction === "neutral" && <Minus        size={16} className="text-[var(--text-secondary)]" />}
+                    <p className={cn(
+                      "font-headline font-bold text-lg",
+                      momChange.direction === "up"      ? "text-success" :
+                      momChange.direction === "down"    ? "text-error"   :
+                      "text-[var(--text-secondary)]"
+                    )}>
+                      {momChange.direction === "up" ? "+" : ""}
+                      {momChange.changePercent}%
+                    </p>
+                    <p className="font-body text-xs text-[var(--text-secondary)]">
+                      ({momChange.prevTotal} → {momChange.currentTotal})
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-          {/* % perubahan */}
-          <p className={cn(
-            "font-headline font-bold text-lg",
-            momChange.direction === "up"      ? "text-success" :
-            momChange.direction === "down"    ? "text-error"   :
-            "text-[var(--text-secondary)]"
-          )}>
-            {momChange.direction === "up" ? "+" : ""}
-            {momChange.changePercent}%
-          </p>
-
-          {/* Detail angka */}
-          <p className="font-body text-xs text-[var(--text-secondary)]">
-            ({momChange.prevTotal} → {momChange.currentTotal})
-          </p>
-        </div>
-      </div>
-    )}
-
-  </div>
-)}
 
       </Card>
     </DashboardLayout>
