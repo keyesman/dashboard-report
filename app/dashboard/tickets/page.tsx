@@ -50,6 +50,7 @@ interface Ticket {
   escalationNote       : string | null;
   escalationCategory   : string | null;
   rawLabels            : string | null; // Tambah ini kalau belum ada
+  lastNote             : string | null;
 }
 
 interface FilterOptions {
@@ -183,6 +184,26 @@ const columns: ColumnDef<Ticket>[] = [
         <span className="text-xs text-[var(--text-secondary)]">-</span>
       ),
   },
+  {
+    accessorKey: "lastNote",
+    header     : "Last Note",
+    cell       : ({ row }) => {
+      if (!row.original.lastNote) {
+        return <span className="text-xs text-[var(--text-secondary)]">-</span>;
+      }
+  
+      return (
+        <div
+          className="max-w-[200px]"
+          title={row.original.lastNote} // Full text muncul saat hover
+        >
+          <p className="text-xs text-[var(--text-primary)] truncate">
+            {row.original.lastNote}
+          </p>
+        </div>
+      );
+    },
+  },  
   {
     accessorKey: "rawLabels",
     header     : "Tags",
