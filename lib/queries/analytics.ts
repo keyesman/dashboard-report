@@ -238,7 +238,6 @@ export async function getAvailableYears(): Promise<number[]> {
   // Ambil semua distinct tahun dari createdAt conversations
   const tickets = await prisma.conversation.findMany({
     select  : { createdAt: true },
-    distinct: ["createdAt"],
   });
 
   // Extract tahun dari setiap createdAt, lalu deduplicate

@@ -19,12 +19,11 @@ import { MetricCard } from "@/components/ui/metric-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { showToast } from "@/components/ui/toast";
 import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, ResponsiveContainer
+  Tooltip, ResponsiveContainer
 } from "recharts";
 import {
   Ticket, CheckCircle, Clock,

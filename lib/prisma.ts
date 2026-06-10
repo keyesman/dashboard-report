@@ -10,7 +10,6 @@
 // Singleton pattern memastikan hanya 1 instance yang aktif.
 // =============================================================================
 
-// import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg }     from '@prisma/adapter-pg'
 
