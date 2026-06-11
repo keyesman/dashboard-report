@@ -369,3 +369,61 @@ export async function getMonthOverMonthChange(
     direction,
   };
 }
+
+// ===========================================================================
+// GET MONTHLY VOLUME BY SERVICE — Ticket per bulan digroup by service
+// Dipakai untuk stacked bar chart di Analytics
+// ===========================================================================
+export interface MonthlyVolumeByServiceRow {
+  month     : number;
+  monthLabel: string;
+  services  : Record<string, number>; // { "Shopify": 45, "Swift": 32, ... }
+  total     : number;
+}
+
+export async function getMonthlyVolumeByService(
+  year: number
+): Promise<MonthlyVolumeByServiceRow[]> {
+  // Ambil semua ticket dalam tahun yang dipilih beserta service-nya
+  const tickets = await prisma.conversation.findMany({
+    where: {
+      createdAt: {
+        gte: new Date(`${year}-01-01T00:00:00.000Z`),
+        lte: new Date(`${year}-12-31T23:59:59.999Z`),
+      },
+    },
+    select: {
+      createdAt: true,
+      service  : true,
+    },
+  });
+
+  // Label bulan dalam Bahasa Indonesia
+  const monthLabels = [
+    "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+    "Jul", "Ags", "Sep", "Okt", "Nov", "Des",
+  ];
+
+  // Inisialisasi semua 12 bulan dengan object kosong
+  const monthMap = new Map<number, Record<string, number>>();
+  for (let i = 1; i <= 12; i++) {
+    monthMap.set(i, {});
+  }
+
+  // Group ticket by bulan & service
+  tickets.forEach((ticket) => {
+    const month   = ticket.createdAt.getMonth() + 1;
+    const service = ticket.service ?? "Unknown"; // Fallback kalau service null
+
+    const monthData    = monthMap.get(month)!;
+    monthData[service] = (monthData[service] ?? 0) + 1;
+  });
+
+  // Convert ke array dengan total per bulan
+  return Array.from(monthMap.entries()).map(([month, services]) => ({
+    month,
+    monthLabel: monthLabels[month - 1],
+    services,
+    total: Object.values(services).reduce((sum, count) => sum + count, 0),
+  }));
+}

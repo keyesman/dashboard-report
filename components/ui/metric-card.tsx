@@ -25,7 +25,7 @@ type TrendDirection = "up" | "down" | "neutral";
 
 interface MetricCardProps {
   title: string;           // Label metric (contoh: "Total Tickets")
-  value: string | number;  // Nilai utama yang ditampilkan besar
+  value: string | number | React.ReactNode;  // Nilai utama yang ditampilkan besar
   subtitle?: string;       // Teks kecil di bawah value (opsional)
   trend?: {
     direction: TrendDirection; // Arah trend: up | down | neutral
@@ -33,6 +33,7 @@ interface MetricCardProps {
   };
   icon?: React.ReactNode;  // Icon di kanan atas card (opsional)
   className?: string;
+  valueClassName?: string;
 }
 
 // ===========================================================================
@@ -69,6 +70,7 @@ export function MetricCard({
   trend,
   icon,
   className,
+  valueClassName,
 }: MetricCardProps) {
   return (
     <div
@@ -106,8 +108,11 @@ export function MetricCard({
         className={cn(
           "font-headline font-bold text-[var(--text-primary)] mt-2",
           typeof value === "string" && value.length > 5
-            ? "text-xl"   // Untuk format HH:MM:SS
-            : "text-3xl"  // Untuk angka pendek
+            ? "text-xl"
+            : typeof value === "number"
+            ? "text-3xl"
+            : "text-2xl", // ReactNode — ukuran medium
+          valueClassName
         )}
       >
         {value}
