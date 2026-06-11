@@ -52,9 +52,9 @@ interface SidebarProps {
 // ===========================================================================
 const navItems = [
   {
-    href : "/dashboard",
-    label: "Overview",
-    icon : LayoutDashboard,
+    href : "/dashboard/analytics",
+    label: "Analytics",
+    icon : BarChart2,
     roles: ["admin", "leader", "viewer"],
   },
   {
@@ -64,14 +64,8 @@ const navItems = [
     roles: ["admin", "leader", "viewer"],
   },
   {
-    href : "/dashboard/analytics",
-    label: "Analytics",
-    icon : BarChart2,
-    roles: ["admin", "leader", "viewer"],
-  },
-  {
     href : "/dashboard/settings",
-    label: "Settings",
+    label: "Configurations",
     icon : Settings,
     roles: ["admin", "leader"],
   },

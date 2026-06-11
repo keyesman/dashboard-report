@@ -258,6 +258,7 @@ export default function TicketsPage() {
   const [isLoading,     setIsLoading]     = useState(false);
   const [hasSearched,   setHasSearched]   = useState(false);
   const [filterOpen, setFilterOpen] = useState(true); // Default: expanded
+  
 
   // Filter state
   const today     = new Date().toISOString().split("T")[0];
@@ -280,6 +281,12 @@ export default function TicketsPage() {
   // ===========================================================================
   // FETCH FILTER OPTIONS on mount
   // ===========================================================================
+  // Auto fetch tickets saat pertama mount — default 7 hari ke belakang
+  useEffect(() => {
+    fetchTickets();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+
   useEffect(() => {
     async function fetchFilterOptions() {
       try {
@@ -378,8 +385,8 @@ export default function TicketsPage() {
   // ===========================================================================
   return (
     <DashboardLayout
-      title="Tickets"
-      description="List of all tickets from Chatwoot"
+      title="L1 Tickets"
+      description="List of all tickets from Chatwoot API"
     >
       {/* =================================================================
           FILTER SECTION — Collapsible
@@ -522,7 +529,6 @@ export default function TicketsPage() {
       {/* =================================================================
           DATA TABLE
           ================================================================= */}
-      {hasSearched && (
         <Card className="mb-6">
           {/* Summary */}
           <div className="flex items-center justify-between mb-4">
@@ -574,19 +580,21 @@ export default function TicketsPage() {
                   : "-",
 
               "Tags"                : t.rawLabels
-                                        ? t.rawLabels.split(",").map((l) => l.trim()).join(" | ")
+                                        ? t.rawLabels
+                                        .split(",")
+                                        .map((l) => l.trim())
+                                        .join(" | ")
                                         : "-",
             }))}
             pageSize={20}
           />
 
         </Card>
-      )}
 
       {/* =================================================================
           INPUT ESCALATION — Hanya untuk admin & leader
           ================================================================= */}
-      {["admin", "leader"].includes(role) && hasSearched && tickets.length > 0 && (
+      {["admin", "leader"].includes(role) && tickets.length > 0 && (
         <Card>
           <h2 className="font-headline font-semibold text-[var(--text-primary)] mb-4">
             📝 Input Escalation

@@ -415,8 +415,8 @@ export default function AnalyticsPage() {
   // ===========================================================================
   return (
     <DashboardLayout
-      title="Analytics"
-      description="L1 team performance charts and metrics"
+      title="Analytics Dashboard"
+      description="L1 tickets reporting dashbaord from Chatwoot API"
     >
       {/* =================================================================
           CHART MONTHLY — Bar chart hijau + tooltip breakdown service
@@ -473,7 +473,7 @@ export default function AnalyticsPage() {
           // Bar Chart — 1 warna hijau, tooltip tampilkan breakdown service
           <ResponsiveContainer width="100%" height={280}>
             <BarChart
-              data={monthlyVolume.filter((m) => m.total > 0)}
+              data={monthlyVolume.filter((m) => m.total >= 0)}
               margin={{ top: 10, right: 20, left: 0, bottom: 10 }}
             >
               <CartesianGrid
@@ -507,7 +507,7 @@ export default function AnalyticsPage() {
                 name="Total Tickets"
                 fill="#10B981"
                 radius={[4, 4, 0, 0]}
-                maxBarSize={50}
+                maxBarSize={150}
               />
             </BarChart>
           </ResponsiveContainer>

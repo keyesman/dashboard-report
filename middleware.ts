@@ -44,7 +44,7 @@ export async function middleware(req: NextRequest) {
 
   if (isAuthRoute && isLoggedIn) {
     // Sudah login → redirect ke dashboard
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl.origin));
+    return NextResponse.redirect(new URL("/dashboard/analytics", req.nextUrl.origin));
   }
 
   return NextResponse.next();

@@ -64,7 +64,7 @@ export default function LoginPage() {
       } else {
         // Login sukses — redirect ke dashboard
         showToast.success("Login successful", "Welcome Back.");
-        router.push("/dashboard");
+        router.push("/dashboard/analytics");
         router.refresh(); // Refresh untuk update session
       }
     } catch {
