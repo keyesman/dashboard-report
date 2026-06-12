@@ -393,8 +393,7 @@ export default function TicketsPage() {
           ================================================================= */}
       <Card className="mb-6">
         {/* Header filter — klik untuk collapse/expand */}
-        {/* Header filter — klik untuk collapse/expand */}
-        <button
+        <div
           onClick={() => setFilterOpen(!filterOpen)}
           className="w-full flex items-center justify-between cursor-pointer"
         >
@@ -409,13 +408,10 @@ export default function TicketsPage() {
             {/* Divider */}
             <span className="text-[var(--border-default)]">|</span>
 
-            {/* Reset Filter button */}
+            {/* Reset Filter — tetap button karena bukan nested lagi */}
             <button
               onClick={(e) => {
-                // Stop propagation supaya gak trigger collapse/expand
                 e.stopPropagation();
-
-                // Reset semua filter ke default
                 setDateFrom(weekAgo);
                 setDateTo(today);
                 setAgent("");
@@ -434,7 +430,7 @@ export default function TicketsPage() {
             </button>
           </div>
 
-          {/* Chevron icon — rotate saat expand */}
+          {/* Chevron */}
           <ChevronDown
             size={16}
             className={cn(
@@ -442,8 +438,7 @@ export default function TicketsPage() {
               filterOpen && "rotate-180"
             )}
           />
-        </button>
-
+        </div>
 
         {filterOpen && (
           <div className="mt-4">

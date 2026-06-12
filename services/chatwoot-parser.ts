@@ -55,7 +55,7 @@ export function parseLabels(labels: string[]): {
     if (label.startsWith("2_")) {
       // Service → prefix 2_
       service = label.slice(2).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    } else if (["p1", "p2", "p3", "p4"].includes(label)) {
+    } else if (["urgent","p1", "p2", "p3", "p4"].includes(label)) {
       // Priority → p1-p4
       priority = label.toUpperCase();
     } else if (["l1", "l2"].includes(label)) {

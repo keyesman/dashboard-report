@@ -5,15 +5,15 @@ Direfactor dari Python/Streamlit ke Next.js + TypeScript.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | Next.js 15+ (App Router, TypeScript) |
-| **Styling** | Tailwind CSS v4 + BudgetZen Design System |
-| **Database** | PostgreSQL + Prisma ORM v7 |
-| **Auth** | NextAuth.js v5 (JWT + Bcrypt) |
-| **Charts** | Recharts |
-| **Table** | TanStack Table v8 |
-| **UI Components** | Custom (Radix UI primitives) |
+| Layer             | Technology                                |
+|-------------------|-------------------------------------------|
+| **Framework**     | Next.js 15+ (App Router, TypeScript)      |
+| **Styling**       | Tailwind CSS v4 + BudgetZen Design System |
+| **Database**      | PostgreSQL + Prisma ORM v7                |
+| **Auth**          | NextAuth.js v5 (JWT + Bcrypt)             |
+| **Charts**        | Recharts                                  |
+| **Table**         | TanStack Table v8                         |
+| **UI Components** | Custom (Radix UI primitives)              |
 
 ## Features
 

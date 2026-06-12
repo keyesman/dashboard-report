@@ -427,3 +427,50 @@ export async function getMonthlyVolumeByService(
     total: Object.values(services).reduce((sum, count) => sum + count, 0),
   }));
 }
+
+// ===========================================================================
+// GET TOP COMPANIES — Top 10 company berdasarkan jumlah ticket
+// Dipakai untuk tabel Top 10 Company di Analytics page
+// ===========================================================================
+export interface TopCompanyRow {
+  rank   : number;
+  company: string;
+  total  : number;
+}
+
+export async function getTopCompanies(
+  params: DateRangeParams
+): Promise<TopCompanyRow[]> {
+  const { dateFrom, dateTo } = params;
+
+  // Ambil semua ticket yang punya company dalam range
+  const tickets = await prisma.conversation.findMany({
+    where: {
+      createdAt: {
+        gte: new Date(dateFrom + "T00:00:00.000Z"),
+        lte: new Date(dateTo   + "T23:59:59.999Z"),
+      },
+      company: { notIn: ["ICUBE"], }, // Hanya yang punya company
+      escalate: "L2",
+      service : { not: "Shopify" },
+    },
+    select: { company: true },
+  });
+
+  // Group by company & hitung total
+  const companyMap = new Map<string, number>();
+  tickets.forEach((t) => {
+    const company = t.company!;
+    companyMap.set(company, (companyMap.get(company) ?? 0) + 1);
+  });
+
+  // Sort descending, ambil top 10, tambah rank
+  return Array.from(companyMap.entries())
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10)
+    .map(([company, total], index) => ({
+      rank: index + 1,
+      company,
+      total,
+    }));
+}

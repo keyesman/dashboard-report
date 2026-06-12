@@ -24,6 +24,7 @@ import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell
 } from "recharts";
 import {
   Ticket, CheckCircle, Clock,
@@ -84,6 +85,13 @@ interface MonthOverMonthResult {
   direction    : "up" | "down" | "neutral";
 }
 
+interface TopCompanyRow {
+  rank   : number;
+  company: string;
+  total  : number;
+}
+
+
 // ===========================================================================
 // HELPER — Convert seconds ke HH:MM:SS
 // ===========================================================================
@@ -106,6 +114,41 @@ const SERVICE_COLORS = [
 function getServiceColor(index: number): string {
   return SERVICE_COLORS[index % SERVICE_COLORS.length];
 }
+
+// ===========================================================================
+// CUSTOM PIE TOOLTIP — Tampilkan nama + total saat hover
+// Persentase sudah tampil langsung di chart (via label)
+// ===========================================================================
+const CustomPieTooltip = ({
+  active,
+  payload,
+}: {
+  active?  : boolean;
+  payload? : { name: string; value: number }[];
+}) => {
+  if (!active || !payload || !payload.length) return null;
+
+  return (
+    <div style={{
+      background  : "var(--bg-card)",
+      border      : "1px solid var(--border-default)",
+      borderRadius: "8px",
+      fontSize    : "12px",
+      padding     : "8px 12px",
+      boxShadow   : "var(--shadow-medium)",
+    }}>
+      <p style={{ color: "var(--text-primary)", fontWeight: "600" }}>
+        {payload[0].name}
+      </p>
+      <p style={{ color: "var(--text-secondary)", marginTop: "2px" }}>
+        Total: <strong style={{ color: "var(--text-primary)" }}>
+          {payload[0].value.toLocaleString()}
+        </strong> tickets
+      </p>
+    </div>
+  );
+};
+
 
 // ===========================================================================
 // CUSTOM MONTHLY TOOLTIP
@@ -271,6 +314,10 @@ export default function AnalyticsPage() {
   const [frtTrend,  setFrtTrend]  = useState<DailyAvgFrtRow[]>([]);
   const [breakdown, setBreakdown] = useState<BreakdownRow[]>([]);
 
+  // Tambah setelah state breakdown
+  const [topCompanies, setTopCompanies] = useState<TopCompanyRow[]>([]);
+
+
   // ===========================================================================
   // FETCH AVAILABLE YEARS — Dipanggil sekali saat mount
   // ===========================================================================
@@ -345,34 +392,39 @@ export default function AnalyticsPage() {
     setIsLoading(true);
     try {
       const params = `dateFrom=${dateFrom}&dateTo=${dateTo}`;
-
-      const [metricsRes, volumeRes, frtRes, breakdownRes] = await Promise.all([
+  
+      // Semua 5 fetch
+      const [metricsRes, volumeRes, frtRes, breakdownRes, topCompaniesRes] = await Promise.all([
         fetch(`/api/analytics/metrics?${params}`),
         fetch(`/api/analytics/volume?${params}`),
         fetch(`/api/analytics/frt-trend?${params}`),
         fetch(`/api/analytics/breakdown?${params}&field=${breakdownField}`),
+        fetch(`/api/analytics/top-companies?${params}`),
       ]);
-
-      const [metricsData, volumeData, frtData, breakdownData] = await Promise.all([
+  
+      // Semua 5 json()
+      const [metricsData, volumeData, frtData, breakdownData, topCompaniesData] = await Promise.all([
         metricsRes.json(),
         volumeRes.json(),
         frtRes.json(),
         breakdownRes.json(),
+        topCompaniesRes.json(), // ← tambah ini
       ]);
-
+  
       setMetrics(metricsData);
       setVolume(volumeData);
       setFrtTrend(frtData);
       setBreakdown(breakdownData);
+      setTopCompanies(topCompaniesData); // ← tambah ini
       setHasLoaded(true);
-
+  
     } catch {
       showToast.error("Failed to load analytics data.");
     } finally {
       setIsLoading(false);
     }
   }, [dateFrom, dateTo, breakdownField]);
-
+  
   // ===========================================================================
   // FETCH BREAKDOWN ONLY — Dipanggil saat user ganti breakdown field
   // ===========================================================================
@@ -748,77 +800,168 @@ export default function AnalyticsPage() {
           </Card>
 
           {/* Chart — Breakdown Ticket (Bar Chart) */}
+          {/* ===============================================================
+              BREAKDOWN + TOP 10 COMPANY — Layout 2 kolom
+              Kiri : Pie chart breakdown (by agent/escalate/priority/type)
+              Kanan: Tabel Top 10 Company
+              =============================================================== */}
           <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <CardTitle>▪ Breakdown Ticket</CardTitle>
-                {/* Pill buttons — scrollable di mobile */}
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {[
-                    { value: "agent",    label: "Agent"    },
-                    { value: "service",  label: "Service"  },
-                    { value: "type",     label: "Type"     },
-                    { value: "priority", label: "Priority" },
-                    { value: "escalate", label: "Escalate" },
-                  ].map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => {
-                        setBreakdownField(option.value);
-                        fetchBreakdown(option.value);
-                      }}
-                      className={cn(
-                        "px-3 py-1.5 rounded-sm text-xs font-semibold font-body",
-                        "border transition-all duration-150 cursor-pointer shrink-0",
-                        breakdownField === option.value
-                          ? "bg-primary-light text-primary border-primary/20"
-                          : "bg-[var(--surface-muted)] text-[var(--text-secondary)] border-[var(--border-default)] hover:text-primary hover:bg-primary-light hover:border-primary/20"
-                      )}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+            <div className="flex flex-col lg:flex-row gap-6">
+
+              {/* ============================================================
+                  KIRI — Pie Chart Breakdown
+                  ============================================================ */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <h3 className="font-headline font-semibold text-[var(--text-primary)]">
+                    ▪ Breakdown Ticket
+                  </h3>
+
+                  {/* Pill buttons */}
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {[
+                      { value: "agent",    label: "Agent"    },
+                      { value: "escalate", label: "Escalate" },
+                      { value: "priority", label: "Priority" },
+                      { value: "type",     label: "Type"     },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          setBreakdownField(option.value);
+                          fetchBreakdown(option.value);
+                        }}
+                        className={cn(
+                          "px-3 py-1.5 rounded-sm text-xs font-semibold font-body",
+                          "border transition-all duration-150 cursor-pointer shrink-0",
+                          breakdownField === option.value
+                            ? "bg-primary-light text-primary border-primary/20"
+                            : "bg-[var(--surface-muted)] text-[var(--text-secondary)] border-[var(--border-default)] hover:text-primary hover:bg-primary-light hover:border-primary/20"
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Pie Chart */}
+                {breakdown.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={breakdown}
+                        dataKey="total"
+                        nameKey="label"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={110}
+                        // Label persentase langsung di chart
+                        label={({ percent }) =>
+                          percent !== undefined ? `${(percent * 100).toFixed(0)}%` : ""
+                        }
+                        labelLine={true}
+                      >
+                        {breakdown.map((_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={SERVICE_COLORS[index % SERVICE_COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      {/* Tooltip: nama + total saat hover */}
+                      <Tooltip content={<CustomPieTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-[var(--text-secondary)]">
+                    <p className="font-body text-sm">No data for this period.</p>
+                  </div>
+                )}
+
+                {/* Legend pie chart */}
+                {breakdown.length > 0 && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2">
+                    {breakdown.map((item, index) => (
+                      <div key={item.label} className="flex items-center gap-1.5">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{ background: SERVICE_COLORS[index % SERVICE_COLORS.length] }}
+                        />
+                        <span className="font-body text-xs text-[var(--text-secondary)]">
+                          {item.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </CardHeader>
-            <CardContent>
-              {breakdown.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={breakdown} margin={{ top: 5, right: 20, left: 0, bottom: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 11, fill: "var(--text-secondary)" }}
-                      angle={-35}
-                      textAnchor="end"
-                      interval={0}
-                    />
-                    <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} allowDecimals={false} />
-                    <Tooltip
-                      contentStyle={{
-                        background  : "var(--bg-card)",
-                        border      : "1px solid var(--border-default)",
-                        borderRadius: "8px",
-                        fontSize    : "12px",
-                      }}
-                      cursor={{ fill: "var(--surface-muted)" }}
-                    />
-                    <Bar
-                      dataKey="total"
-                      name="Total Tickets"
-                      fill="#10B981"
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={100}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-center text-sm text-[var(--text-secondary)] py-10">
-                  There is no data for this period.
-                </p>
-              )}
-            </CardContent>
+
+              {/* Divider vertikal — hanya di desktop */}
+              <div className="hidden lg:block w-px bg-[var(--border-default)]" />
+
+              {/* ============================================================
+                  KANAN — Top 10 Company Table
+                  ============================================================ */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-headline font-semibold text-[var(--text-primary)] mb-4">
+                  🏢 Top 10 Company
+                </h3>
+
+                {topCompanies.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-[var(--surface-muted)] border-b border-[var(--border-default)]">
+                          <th className="px-3 py-2 text-left font-headline text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] w-12">
+                            No
+                          </th>
+                          <th className="px-3 py-2 text-left font-headline text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                            Company
+                          </th>
+                          <th className="px-3 py-2 text-right font-headline text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)] w-20">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topCompanies.map((row) => (
+                          <tr
+                            key={row.rank}
+                            className="border-b border-[var(--border-default)] hover:bg-[var(--surface-muted)] transition-colors"
+                          >
+                            <td className="px-3 py-2 font-body text-xs text-[var(--text-secondary)] text-center">
+                              {row.rank}
+                            </td>
+                            <td className="px-3 py-2 font-body text-sm text-[var(--text-primary)]">
+                              {row.company}
+                            </td>
+                            <td className="px-3 py-2 font-body text-sm font-semibold text-[var(--text-primary)] text-right">
+                              {row.total.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                        {/* Total row */}
+                        <tr className="bg-[var(--surface-muted)]">
+                          <td colSpan={2} className="px-3 py-2 font-headline text-sm font-semibold text-[var(--text-primary)] text-center">
+                            Total
+                          </td>
+                          <td className="px-3 py-2 font-headline text-sm font-semibold text-primary text-right">
+                            {topCompanies.reduce((sum, r) => sum + r.total, 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-[var(--text-secondary)]">
+                    <p className="font-body text-sm">No company data for this period.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </Card>
+
         </>
       )}
     </DashboardLayout>
