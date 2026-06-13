@@ -54,59 +54,75 @@ interface DataTableProps<TData, TValue> {
   pageSize?      : number;                             // Jumlah row per halaman (default: 10)
 }
 
+// EXPORT TO EXCEL — Menggunakan ExcelJS (pengganti xlsx yang deprecated)
+// ExcelJS actively maintained, lebih aman, support rich formatting
+// Handle: spasi di header, newline dalam value, special chars
 // ===========================================================================
-// EXPORT TO CSV — Helper function untuk export data ke file CSV
-//
-// Fix yang dilakukan:
-// 1. Join rows dengan newline, bukan "" yang bikin semua jadi 1 baris
-// 2. Proper escape untuk koma, quotes, newline dalam value
-// 3. Tambah BOM supaya Excel baca UTF-8 dengan benar
-// 4. Support exportData prop untuk format custom
-// ===========================================================================
-// ===========================================================================
-// EXPORT TO CSV — Menggunakan library SheetJS (xlsx)
-// Handle semua edge case otomatis: newline, koma, quotes, special chars
-// ===========================================================================
-function exportToXlsx(data: Record<string, unknown>[], fileName: string) {
+async function exportToExcel(
+  data    : Record<string, unknown>[],
+  fileName: string
+) {
   if (!data.length) return;
 
-  const XLSX = require("xlsx");
+  // Dynamic import — supaya ExcelJS hanya di-load saat dibutuhkan
+  // Mengurangi initial bundle size
+  const ExcelJS = (await import("exceljs")).default;
+
+  const workbook  = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Sheet1");
 
   // ===========================================================================
-  // Sanitize data:
-  // - Header: ganti spasi dengan underscore
-  // - Value: bersihkan newline supaya cell rapi
+  // SETUP COLUMNS — Ambil dari keys object pertama
+  // Ganti spasi dengan underscore supaya header kolom rapi
   // ===========================================================================
-  const sanitizedData = data.map((row) => {
-    const newRow: Record<string, unknown> = {};
+  const headers = Object.keys(data[0]);
+  worksheet.columns = headers.map((key) => ({
+    header: key.replace(/ /g, "_"), // Spasi → underscore
+    key,
+    width : 20,                      // Default column width
+  }));
+
+  // Style header row — bold + light green background
+  worksheet.getRow(1).font = { bold: true };
+  worksheet.getRow(1).fill = {
+    type   : "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FFE8F5E9" }, // Light mint green
+  };
+
+  // ===========================================================================
+  // ADD DATA ROWS — Sanitize newline dalam value supaya cell rapi
+  // ===========================================================================
+  data.forEach((row) => {
+    const sanitizedRow: Record<string, unknown> = {};
     Object.entries(row).forEach(([key, value]) => {
-      const safeKey = key.replace(/ /g, "_");
-
       if (typeof value === "string") {
-        newRow[safeKey] = value
+        sanitizedRow[key] = value
           .replace(`/\r?
-/g`, " ")
-          .replace(`/\r/g`, " ")
+/g`, " ") // Newline → spasi
+          .replace(/\r/g, " ")
           .trim();
       } else {
-        newRow[safeKey] = value;
+        sanitizedRow[key] = value ?? "";
       }
     });
-    return newRow;
+    worksheet.addRow(sanitizedRow);
   });
 
-  // Buat worksheet & workbook
-  const worksheet = XLSX.utils.json_to_sheet(sanitizedData);
-  const workbook  = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Tickets");
-
-  // Export sebagai .xlsx — bukan .csv
-  // Format xlsx tidak punya masalah pemisah kolom
-  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+  // ===========================================================================
+  // TRIGGER DOWNLOAD — Generate buffer lalu buat blob untuk download
+  // ===========================================================================
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob   = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href     = url;
+  link.download = `${fileName}.xlsx`;
+  link.click();
+  URL.revokeObjectURL(url);
 }
-
-
-
 
 
 // ===========================================================================
@@ -134,12 +150,12 @@ function TableSkeleton({ columns }: { columns: number }) {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  isLoading     = false,
-  emptyMessage  = "No data available.",
-  showExport    = false,
+  isLoading      = false,
+  emptyMessage   = "No data available.",
+  showExport     = false,
   exportFileName = "export",
-  exportData,
-  pageSize      = 10,
+  exportData,                // ← tambah ini
+  pageSize       = 10,
 }: DataTableProps<TData, TValue>) {
 
   // Sorting state — kolom mana yang di-sort & arahnya
@@ -174,7 +190,7 @@ export function DataTable<TData, TValue>({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => exportToXlsx(
+            onClick={() => exportToExcel(
               exportData ?? (data as Record<string, unknown>[]),
               exportFileName
             )}
@@ -183,9 +199,9 @@ export function DataTable<TData, TValue>({
             <Download size={14} />
             Export Excel
           </Button>
-
         </div>
       )}
+
 
       {/* ===================================================================
           TABLE WRAPPER — Horizontally scrollable di mobile
