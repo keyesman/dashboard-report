@@ -24,7 +24,8 @@ export async function PATCH(
   try {
     const { id } = await params;
     const shifts  = await getShifts();
-    const shift   = shifts.find((s) => s.id === Number(id));
+    //const shift   = shifts.find((s) => s.id === Number(id));
+    const shift   = shifts.find((s: { id: number; isActive: boolean }) => s.id === Number(id));
     if (!shift) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
