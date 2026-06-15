@@ -22,7 +22,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const users   = await getUsers();
-    const user    = users.find((u) => u.id === Number(id));
+    const user    = users.find((u: { id: Number; isActive: boolean }) => u.id === Number(id));
     if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const success = await toggleUser(Number(id), user.isActive);
