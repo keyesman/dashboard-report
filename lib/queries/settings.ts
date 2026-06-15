@@ -74,8 +74,16 @@ export async function getEscalationCategories(activeOnly = false) {
   return prisma.escalationCategory.findMany({
     where  : activeOnly ? { isActive: true } : undefined,
     orderBy: { name: "asc" },
+    select : {
+      id       : true,
+      name     : true,
+      isActive : true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 }
+
 
 // Tambah escalation category baru
 export async function addEscalationCategory(name: string) {
