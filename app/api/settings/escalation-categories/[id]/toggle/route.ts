@@ -25,7 +25,7 @@ export async function PATCH(
   try {
     const { id }    = await params;
     const categories = await getEscalationCategories();
-    const cat        = categories.find((c) => c.id === Number(id));
+    const cat = categories.find((c: { id: number; isActive: boolean }) => c.id === Number(id));
     if (!cat) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const success = await toggleEscalationCategory(Number(id), cat.isActive);
