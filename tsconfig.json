@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "strict": false,
+    "noImplicitAny": false,
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
