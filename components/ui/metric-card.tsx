@@ -27,6 +27,7 @@ interface MetricCardProps {
   title: string;           // Label metric (contoh: "Total Tickets")
   value: string | number | React.ReactNode;  // Nilai utama yang ditampilkan besar
   subtitle?: string;       // Teks kecil di bawah value (opsional)
+  description?: React.ReactNode;
   trend?: {
     direction: TrendDirection; // Arah trend: up | down | neutral
     label: string;             // Label trend (contoh: "+12% dari kemarin")
@@ -67,6 +68,7 @@ export function MetricCard({
   title,
   value,
   subtitle,
+  description,
   trend,
   icon,
   className,
@@ -129,6 +131,16 @@ export function MetricCard({
         </p>
       )}
 
+      {/* ===================================================================
+          description — Teks kecil opsional di bawah value
+          Contoh: "dari 142 ticket total"
+          =================================================================== */}
+      {description && (
+        <p className="font-body text-xs text-[var(--text-secondary)] mt-1">
+          {description}
+        </p>
+      )}
+      
       {/* ===================================================================
           TREND INDICATOR — Arah perubahan (optional)
           Tampil di bawah sebagai pill kecil berwarna

@@ -24,7 +24,8 @@ import {
   LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell,
+  ReferenceLine
 } from "recharts";
 import {
   Ticket, CheckCircle, Clock,
@@ -32,6 +33,7 @@ import {
   TrendingUp, TrendingDown, Minus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getDailyAvgFrt } from "@/lib/queries/analytics";
 
 // ===========================================================================
 // TYPES
@@ -154,6 +156,78 @@ const CustomPieTooltip = ({
 // CUSTOM MONTHLY TOOLTIP
 // Tampilkan total ticket + breakdown per service saat hover ke bar
 // ===========================================================================
+const FRT_TARGET_MINUTES = 15;
+
+ // tampilkan avg frt per day vs target frt
+ const CustomFrtTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?  : boolean;
+  payload? : Array<{ value: number; name: string }>;
+  label?   : string;
+}) => {
+  if (!active || !payload || !payload.length) return null;
+
+  // Ambil nilai actual AVG FRT dari payload
+  const actual = payload[0]?.value as number;
+  const lastActual = actual > 60 ? actual/60 : actual;
+
+  // Hitung selisih dari target (positif = di atas = buruk, negatif = di bawah = bagus)
+  const diff          = actual - FRT_TARGET_MINUTES;
+  const changePercent = Math.round((diff / FRT_TARGET_MINUTES) * 100);
+
+  // Tentukan arah & warna
+  const isAbove = diff > 0;
+  const isEqual = diff === 0;
+  const color   = isEqual ? "var(--text-secondary)" : isAbove ? "#EF4444" : "#10B981";
+
+  return (
+    <div style={{
+      background  : "var(--bg-card)",
+      border      : "1px solid var(--border-default)",
+      borderRadius: "8px",
+      fontSize    : "12px",
+      padding     : "10px 14px",
+      boxShadow   : "var(--shadow-medium)",
+      minWidth    : "180px",
+    }}>
+      {/* Tanggal */}
+      <p style={{ color: "#F59E0B", fontWeight: "600", marginBottom: "8px" }}>
+        {label}
+      </p>
+
+      {/* AVG FRT aktual */}
+      <p style={{ color: "var(--text-primary)", marginBottom: "6px" }}>
+        AVG FRT: <strong>{lastActual.toFixed(2)}{actual > 60 ? " hours" : " minutes"}</strong>
+      </p>
+
+      {/* Garis pemisah */}
+      <div style={{
+        paddingBottom: "6px",
+        marginBottom : "6px",
+        borderBottom : "1px solid var(--border-default)",
+      }} />
+
+      {/* % selisih dari target — hijau kalau di bawah, merah kalau di atas */}
+      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <span style={{ color, fontWeight: "700", fontSize: "13px" }}>
+          {isEqual ? "●" : isAbove ? "▲" : "▼"}{" "}
+          {isAbove ? "+" : ""}{changePercent}%
+        </span>
+        <span style={{ color, fontSize: "13px" }}>
+          {isEqual
+            ? "achieved"
+            : isAbove
+            ? "not achieved"
+            : "achieved"}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 const CustomMonthlyTooltip = ({
   active,
   payload,
@@ -331,6 +405,7 @@ export default function AnalyticsPage() {
       console.error("Failed to fetch available years");
     }
   }, []);
+
 
   // ===========================================================================
   // FETCH MONTHLY VOLUME
@@ -710,14 +785,53 @@ export default function AnalyticsPage() {
             />
             <MetricCard
               title="AVG FRT"
-              value={secondsToHHMMSS(metrics?.avgFrtSeconds ?? 0)}
+              value={
+                <span
+                  className={
+                    (metrics?.avgFrtSeconds ?? 0) > 900
+                      ? "text-red-500"
+                      : "text-green-500"
+                  }
+                >
+                  {secondsToHHMMSS(metrics?.avgFrtSeconds ?? 0)}
+                </span>
+              }
               subtitle={`of ${metrics?.ticketsWithFrt ?? 0} tickets`}
+              description={
+                <span
+                  className={
+                    (metrics?.avgFrtSeconds ?? 0) > 900
+                      ? "text-red-500"
+                      : "text-green-500"
+                  }>
+                    {(metrics?.avgFrtSeconds ?? 0) > 900 ? "15 minute target, not achieved!" : "15 minute target, achieved!"}
+                </span>
+              }
               icon={<Clock size={18} />}
             />
             <MetricCard
               title="AVG Resolution"
-              value={secondsToHHMMSS(metrics?.avgRtSeconds ?? 0)}
+              value={
+                <span
+                  className={
+                    (metrics?.avgRtSeconds ?? 0) > 28800
+                      ? "text-red-500"
+                      : "text-green-500"
+                  }>
+                    {secondsToHHMMSS(metrics?.avgRtSeconds ?? 0)}
+                </span>
+              }
               subtitle={`of ${metrics?.ticketsResolved ?? 0} tickets`}
+              description={
+                <span
+                  className={
+                    (metrics?.avgRtSeconds ?? 0) > 28800
+                      ? "text-red-500"
+                      : "text-green-500"
+                  }>
+                    {(metrics?.avgRtSeconds ?? 0) > 28800 ? "8 hour target, not achieved!" : "8 hour target, achieved!"}
+                </span>
+              }
               icon={<Clock size={18} />}
             />
           </div>
@@ -773,13 +887,13 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
                     <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
                     <Tooltip
-                      contentStyle={{
-                        background  : "var(--bg-card)",
-                        border      : "1px solid var(--border-default)",
-                        borderRadius: "8px",
-                        fontSize    : "12px",
-                      }}
-                      formatter={(value) => [`${value} menit`, "AVG FRT"]}
+                      content={<CustomFrtTooltip />}
+                    />
+                    <ReferenceLine
+                      y={15}
+                      stroke="#EF4444"
+                      strokeDasharray="5 5"
+                      label={{ value: "Max FRT 15 min", position: "insideTopRight", fontSize: 13, fill: "#EF4444" }}
                     />
                     <Line
                       type="monotone"
