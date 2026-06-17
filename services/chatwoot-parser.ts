@@ -41,11 +41,13 @@ export function parseLabels(labels: string[]): {
   escalate : string | null;
   type     : string | null;
   rawLabels: string;
+  company  : string | null;
 } {
   let service  : string | null = null;
   let priority : string | null = null;
   let escalate : string | null = null;
   let type     : string | null = null;
+  let company  : string | null = null;
 
   const rawLabels = labels.join(", ");
 
@@ -55,6 +57,8 @@ export function parseLabels(labels: string[]): {
     if (label.startsWith("2_")) {
       // Service → prefix 2_
       service = label.slice(2).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    } else if (label.startsWith("3_")) {
+      company = label.slice(2).replace(/_/g, " ");
     } else if (["urgent","p1", "p2", "p3", "p4"].includes(label)) {
       // Priority → p1-p4
       priority = label.toUpperCase();
@@ -68,7 +72,7 @@ export function parseLabels(labels: string[]): {
     }
   }
 
-  return { service, priority, escalate, type, rawLabels };
+  return { service, company, priority, escalate, type, rawLabels };
 }
 
 // ===========================================================================
@@ -169,7 +173,7 @@ export function buildConversation(
   const labels       = conv.labels ?? [];
   const resolveCount = parseResolveCount(messages);
 
-  const { service, priority, escalate, type, rawLabels } = parseLabels(labels);
+  const { service, company: labelCompany, priority, escalate, type, rawLabels } = parseLabels(labels);
   const customerInfo = parseCustomerInfo(conv);
   const assignee     = conv.meta?.assignee;
 
@@ -188,7 +192,7 @@ export function buildConversation(
     resolveCount,
     isReopened            : resolveCount > 1,
     lastNote              : parseLastNote(messages),
-    company               : customerInfo.company,
+    company               : labelCompany ?? customerInfo.company,
     customer              : customerInfo.customer,
     phone                 : customerInfo.phone,
   };

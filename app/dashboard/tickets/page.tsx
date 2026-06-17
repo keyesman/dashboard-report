@@ -72,6 +72,12 @@ function secondsToHHMMSS(seconds: number | null): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function toProperCase(str: string | null): string {
+  if (!str) return "-";
+
+  return str.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // ===========================================================================
 // TABLE COLUMNS DEFINITION
 // ===========================================================================
@@ -157,7 +163,7 @@ const columns: ColumnDef<Ticket>[] = [
     accessorKey: "company",
     header     : "Company",
     cell       : ({ row }) => (
-      <span className="text-sm">{row.original.company ?? "-"}</span>
+      <span className="text-sm">{toProperCase(row.original.company) ?? "-"}</span>
     ),
   },
   {
@@ -557,7 +563,7 @@ export default function TicketsPage() {
               "Type"                : t.type                ?? "-",
               "FRT"                 : secondsToHHMMSS(t.frtSeconds),
               "Resolution Time"     : secondsToHHMMSS(t.resolutionTimeSeconds),
-              "Company"             : t.company             ?? "-",
+              "Company"             : toProperCase(t.company) ?? "-",
               "Customer"            : t.customer            ?? "-",
               "Phone"               : t.phone               ?? "-",
               "Escalation Category" : t.escalationCategory  ?? "-",
