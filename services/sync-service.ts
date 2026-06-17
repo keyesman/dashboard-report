@@ -84,6 +84,8 @@ export async function runSync(params: SyncParams): Promise<SyncResult> {
             company               : data.company,
             customer              : data.customer,
             phone                 : data.phone,
+            csatRating            : data.csatRating,
+            csatFeedback          : data.csatFeedback,
           },
           create: data,
         });

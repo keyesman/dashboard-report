@@ -17,6 +17,8 @@ export interface ChatwootConversation {
     status              : string;
     labels              : string[];
     first_reply_created_at?: number;
+    csat_rating         ?: number;
+    csat_feedback       ?: string;
     meta: {
       sender  ?: {
         name                 ?: string;

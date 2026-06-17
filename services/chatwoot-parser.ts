@@ -195,5 +195,7 @@ export function buildConversation(
     company               : labelCompany ?? customerInfo.company,
     customer              : customerInfo.customer,
     phone                 : customerInfo.phone,
+    csatRating            : conv.csat_rating   ?? null,
+    csatFeedback          : conv.csat_feedback ?? null,
   };
 }
