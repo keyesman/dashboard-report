@@ -51,6 +51,8 @@ interface Ticket {
   escalationCategory   : string | null;
   rawLabels            : string | null; // Tambah ini kalau belum ada
   lastNote             : string | null;
+  csatRating           : number | null;
+  csatFeedback         : string | null;
 }
 
 interface FilterOptions {
@@ -165,6 +167,37 @@ const columns: ColumnDef<Ticket>[] = [
     cell       : ({ row }) => (
       <span className="text-sm">{toProperCase(row.original.company) ?? "-"}</span>
     ),
+  },
+  {
+    accessorKey: "csatRating",   // ← bukan "company"
+    header     : "Rating",
+    cell       : ({ row }) => {
+      const rating = row.original.csatRating;
+      if (!rating) return <span className="text-xs text-[var(--text-secondary)]">-</span>;
+      // Tampilkan bintang sesuai rating (1–5)
+      return (
+        <div className="flex items-center gap-1">
+          <span className="text-amber-400">
+            {"★".repeat(rating)}{"☆".repeat(5 - rating)}
+          </span>
+          <span className="text-xs text-[var(--text-secondary)]">({rating})</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "csatFeedback",  // ← bukan "company"
+    header     : "Feedback",
+    cell       : ({ row }) => {
+      const feedback = row.original.csatFeedback;
+      if (!feedback) return <span className="text-xs text-[var(--text-secondary)]">-</span>;
+      // Truncate panjang, full text muncul saat hover
+      return (
+        <div className="max-w-[180px]" title={feedback}>
+          <p className="text-xs text-[var(--text-primary)] truncate">{feedback}</p>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "escalationCategory",
@@ -566,6 +599,8 @@ export default function TicketsPage() {
               "Company"             : toProperCase(t.company) ?? "-",
               "Customer"            : t.customer            ?? "-",
               "Phone"               : t.phone               ?? "-",
+              "CSAT Rating"         : t.csatRating   ?? "-",
+              "CSAT Feedback"       :  t.csatFeedback ?? "-",
               "Escalation Category" : t.escalationCategory  ?? "-",
               "Escalation Note"     : t.escalationNote      ?? "-",
               "Last Note": t.lastNote

@@ -47,6 +47,8 @@ export interface TicketRow {
   escalationNote       : string | null;
   escalationCategory   : string | null;
   rawLabels            : string | null;
+  csatRating           : number | null; 
+  csatFeedback         : string | null; 
 }
 
 // ===========================================================================
