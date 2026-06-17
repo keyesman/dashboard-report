@@ -17,8 +17,6 @@ export interface ChatwootConversation {
     status              : string;
     labels              : string[];
     first_reply_created_at?: number;
-    csat_rating         ?: number;
-    csat_feedback       ?: string;
     meta: {
       sender  ?: {
         name                 ?: string;
@@ -40,6 +38,15 @@ export interface ChatwootConversation {
     message_type : number; // 2 = activity message
     private      : boolean;
     created_at   : number;
+    content_type      ?: string;
+    content_attributes?: {
+      submitted_values?: {
+        csat_survey_response?: {
+          rating          : number;
+          feedback_message: string;
+        };
+      };
+    };
   }
   
   // ===========================================================================

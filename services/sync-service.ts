@@ -14,6 +14,7 @@ import prisma                                from "@/lib/prisma";
 import { getAllConversations, getMessages }  from "./chatwoot";
 import { buildConversation }                 from "./chatwoot-parser";
 
+
 // ===========================================================================
 // TYPES
 // ===========================================================================
@@ -60,8 +61,6 @@ export async function runSync(params: SyncParams): Promise<SyncResult> {
       try {
         // Fetch messages untuk conversation ini
         const messages = await getMessages(conv.id);
-
-        // Parse semua data
         const data = buildConversation(conv, messages);
 
         // Upsert ke DB — update kalau sudah ada, insert kalau belum

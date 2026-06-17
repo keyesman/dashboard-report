@@ -176,6 +176,7 @@ export function buildConversation(
   const { service, company: labelCompany, priority, escalate, type, rawLabels } = parseLabels(labels);
   const customerInfo = parseCustomerInfo(conv);
   const assignee     = conv.meta?.assignee;
+  const { csatRating, csatFeedback } = parseCsat(messages);
 
   return {
     ticketId              : conv.id,
@@ -195,7 +196,32 @@ export function buildConversation(
     company               : labelCompany ?? customerInfo.company,
     customer              : customerInfo.customer,
     phone                 : customerInfo.phone,
-    csatRating            : conv.csat_rating   ?? null,
-    csatFeedback          : conv.csat_feedback ?? null,
+    csatRating,
+    csatFeedback,
+  };
+}
+
+// ===========================================================================
+// PARSE CSAT — Ambil rating & feedback dari message bertipe "input_csat"
+// Data ada di content_attributes.submitted_values.csat_survey_response
+// ===========================================================================
+export function parseCsat(messages: ChatwootMessage[]): {
+  csatRating  : number | null;
+  csatFeedback: string | null;
+} {
+  // Cari message CSAT yang sudah diisi customer (ada submitted_values-nya)
+  const csatMessage = messages.find(
+    (m) =>
+      m.content_type === "input_csat" &&
+      m.content_attributes?.submitted_values?.csat_survey_response != null
+  );
+
+  if (!csatMessage) return { csatRating: null, csatFeedback: null };
+
+  const response = csatMessage.content_attributes?.submitted_values?.csat_survey_response;
+
+  return {
+    csatRating  : response?.rating           ?? null,
+    csatFeedback: response?.feedback_message ?? null,
   };
 }
