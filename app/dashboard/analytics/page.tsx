@@ -795,14 +795,14 @@ export default function AnalyticsPage() {
                   {metrics?.csatPercentage ?? 0}%
                 </span>
               }
-              subtitle={`of ${metrics?.totalTickets ?? 0} tickets`}
+              subtitle={`${metrics?.csatCount ?? 0} of ${metrics?.totalTickets ?? 0} tickets`}
               description={
                 <span className={
                   (metrics?.csatPercentage ?? 0) >= 70 ? "text-success" : "text-error"
                 }>
                   {(metrics?.csatPercentage ?? 0) >= 70
-                    ? "✓ Target achieved (>70%)"
-                    : "✗ Not achieved (>70%)"}
+                    ? "✓ Target > 70%, achieved!"
+                    : "✗ Target > 70%, not achieved!"}
                 </span>
               }
               icon={<Star size={18} />}
@@ -820,7 +820,7 @@ export default function AnalyticsPage() {
                   {secondsToHHMMSS(metrics?.avgFrtSeconds ?? 0)}
                 </span>
               }
-              subtitle={`of ${metrics?.ticketsWithFrt ?? 0} tickets`}
+              subtitle={`from ${metrics?.ticketsWithFrt ?? 0} tickets`}
               description={
                 <span
                   className={
@@ -828,7 +828,7 @@ export default function AnalyticsPage() {
                       ? "text-red-500"
                       : "text-green-500"
                   }>
-                    {(metrics?.avgFrtSeconds ?? 0) > 900 ? "15 minute target, not achieved!" : "15 minute target, achieved!"}
+                    {(metrics?.avgFrtSeconds ?? 0) > 900 ? "✗ Target 15 minute, not achieved!" : "✓ Target 15 minute, achieved!"}
                 </span>
               }
               icon={<Clock size={18} />}
@@ -845,7 +845,7 @@ export default function AnalyticsPage() {
                     {secondsToHHMMSS(metrics?.avgRtSeconds ?? 0)}
                 </span>
               }
-              subtitle={`of ${metrics?.ticketsResolved ?? 0} tickets`}
+              subtitle={`from ${metrics?.ticketsResolved ?? 0} tickets`}
               description={
                 <span
                   className={
@@ -853,7 +853,7 @@ export default function AnalyticsPage() {
                       ? "text-red-500"
                       : "text-green-500"
                   }>
-                    {(metrics?.avgRtSeconds ?? 0) > 28800 ? "8 hour target, not achieved!" : "8 hour target, achieved!"}
+                    {(metrics?.avgRtSeconds ?? 0) > 28800 ? "✗ Target 8 hour, not achieved!" : "✓ Target 8 hour, achieved!"}
                 </span>
               }
               icon={<Clock size={18} />}
