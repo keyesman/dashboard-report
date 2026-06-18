@@ -30,7 +30,8 @@ import {
 import {
   Ticket, CheckCircle, Clock,
   AlertCircle, BarChart2, RefreshCw,
-  TrendingUp, TrendingDown, Minus
+  TrendingUp, TrendingDown, Minus,
+  Star
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getDailyAvgFrt } from "@/lib/queries/analytics";
@@ -45,6 +46,8 @@ interface AvgMetrics {
   avgFrtSeconds  : number;
   avgRtSeconds   : number;
   ticketsWithFrt : number;
+  csatCount     : number;
+  csatPercentage: number;
 }
 
 interface DailyVolumeRow {
@@ -765,7 +768,7 @@ export default function AnalyticsPage() {
       {hasLoaded && (
         <>
           {/* Metric Cards — Mobile: 2 kolom, Desktop: 5 kolom */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6 ">
             <MetricCard
               title="Total Tickets"
               value={metrics?.totalTickets ?? 0}
@@ -782,6 +785,27 @@ export default function AnalyticsPage() {
                 <span className="text-primary">{metrics?.backlog ?? 0}</span>
               }
               icon={<AlertCircle size={18} />}
+            />
+            <MetricCard
+              title="CSAT"
+              value={
+                <span className={
+                  (metrics?.csatPercentage ?? 0) >= 70 ? "text-success" : "text-error"
+                }>
+                  {metrics?.csatPercentage ?? 0}%
+                </span>
+              }
+              subtitle={`of ${metrics?.totalTickets ?? 0} tickets`}
+              description={
+                <span className={
+                  (metrics?.csatPercentage ?? 0) >= 70 ? "text-success" : "text-error"
+                }>
+                  {(metrics?.csatPercentage ?? 0) >= 70
+                    ? "✓ Target achieved (>70%)"
+                    : "✗ Not achieved (>70%)"}
+                </span>
+              }
+              icon={<Star size={18} />}
             />
             <MetricCard
               title="AVG FRT"

@@ -35,6 +35,8 @@ export interface AvgMetrics {
   avgFrtSeconds  : number;
   avgRtSeconds   : number;
   ticketsWithFrt : number;
+  csatCount     : number; // Jumlah ticket yang punya rating CSAT
+  csatPercentage: number; // % CSAT dari total tickets
 }
 
 // Daily AVG FRT — untuk trend line chart
@@ -119,6 +121,7 @@ export async function getAvgMetrics(
       status               : true,
       frtSeconds           : true,
       resolutionTimeSeconds: true,
+      csatRating           : true,
     },
   });
 
@@ -140,6 +143,11 @@ export async function getAvgMetrics(
     ? withResolution.reduce((sum, t) => sum + t.resolutionTimeSeconds!, 0) / withResolution.length
     : 0;
 
+  const csatCount      = tickets.filter((t) => t.csatRating !== null).length;
+  const csatPercentage = totalTickets > 0
+    ? Math.round((csatCount / totalTickets) * 100)
+    : 0;
+
   return {
     totalTickets,
     ticketsResolved,
@@ -147,6 +155,8 @@ export async function getAvgMetrics(
     avgFrtSeconds : Math.round(avgFrtSeconds),
     avgRtSeconds  : Math.round(avgRtSeconds),
     ticketsWithFrt: withFrt.length,
+    csatCount,
+    csatPercentage,
   };
 }
 
