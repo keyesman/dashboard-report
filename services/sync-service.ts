@@ -87,7 +87,8 @@ export async function runSync(params: SyncParams): Promise<SyncResult> {
             csatFeedback          : data.csatFeedback,
             subject               : data.subject,      
             rootCause             : data.rootCause,    
-            resolution            : data.resolution,   
+            resolution            : data.resolution, 
+            source                : data.source,  
           },
           create: data,
         });

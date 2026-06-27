@@ -27,6 +27,14 @@ const TYPE_MAPPING: Record<string, string> = {
   system_code_issue: "System/Code Issue",
 };
 
+const SOURCE_MAPPING: Record<string, string> = {
+  wag     : "Whatsapp",
+  teams   : "Teams",
+  slack   : "Slack",
+  email   : "Email",
+  chatwoot: "Chatwoot",
+};
+
 // ===========================================================================
 // PARSE LABELS — Extract info dari array labels Chatwoot
 // Label conventions:
@@ -42,12 +50,14 @@ export function parseLabels(labels: string[]): {
   type     : string | null;
   rawLabels: string;
   company  : string | null;
+  source   : string;
 } {
   let service  : string | null = null;
   let priority : string | null = null;
   let escalate : string | null = null;
   let type     : string | null = null;
   let company  : string | null = null;
+  let source   : string = "-";
 
   const rawLabels = labels.join(", ");
 
@@ -70,9 +80,17 @@ export function parseLabels(labels: string[]): {
       const key = label.slice(3);
       type = TYPE_MAPPING[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     }
+    else if (label.startsWith("10_")) {
+      const key = label.slice(3);
+      type = TYPE_MAPPING[key] ?? key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    } else if (label.startsWith("4_")) {
+      // Source → prefix 4_ (contoh: 4_wag → "Whatsapp")
+      const key = label.slice(2);
+      source = SOURCE_MAPPING[key] ?? "-";
+    }
   }
 
-  return { service, company, priority, escalate, type, rawLabels };
+  return { service, company, priority, escalate, type, rawLabels, source };
 }
 
 // ===========================================================================
@@ -207,7 +225,7 @@ export function buildConversation(
   const labels       = conv.labels ?? [];
   const resolveCount = parseResolveCount(messages);
 
-  const { service, company: labelCompany, priority, escalate, type, rawLabels } = parseLabels(labels);
+  const { service, company: labelCompany, priority, escalate, type, rawLabels, source } = parseLabels(labels);
   const customerInfo = parseCustomerInfo(conv);
   const assignee     = conv.meta?.assignee;
   const { csatRating, csatFeedback } = parseCsat(messages);
@@ -236,6 +254,7 @@ export function buildConversation(
     subject,   
     rootCause, 
     resolution,
+    source,
   };
 }
 

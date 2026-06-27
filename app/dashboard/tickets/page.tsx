@@ -56,6 +56,7 @@ interface Ticket {
   subject              : string | null;
   rootCause            : string | null;
   resolution           : string | null;
+  source               : string | null;
 }
 
 interface FilterOptions {
@@ -154,6 +155,13 @@ const columns: ColumnDef<Ticket>[] = [
       row.original.priority
         ? <PriorityBadge priority={row.original.priority} />
         : <span className="text-xs text-[var(--text-secondary)]">-</span>,
+  },
+  {
+    accessorKey: "source",
+    header     : "Source",
+    cell       : ({ row }) => (
+      <span className="text-sm">{row.original.source ?? "-"}</span>
+    ),
   },
   {
     accessorKey: "escalate",
@@ -640,6 +648,7 @@ export default function TicketsPage() {
               "Service"             : t.service             ?? "-",
               "Priority"            : t.priority            ?? "-",
               "Escalate"            : t.escalate            ?? "-",
+              "Source"              : t.source         ?? "-",
               "Type"                : t.type                ?? "-",
               "First Response Time" : secondsToHHMMSS(t.frtSeconds),
               "Resolution Time"     : secondsToHHMMSS(t.resolutionTimeSeconds),

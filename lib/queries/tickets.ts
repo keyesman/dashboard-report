@@ -52,6 +52,7 @@ export interface TicketRow {
   subject              : string | null;  
   rootCause            : string | null;  
   resolution           : string | null;  
+  source               : string | null;
 }
 
 // ===========================================================================

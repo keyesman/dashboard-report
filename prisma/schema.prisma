@@ -79,6 +79,7 @@ model Conversation {
   subject               String?   // Dari note "Case Subject : ..."
   rootCause             String?   @map("root_cause") // Dari note "Root Cause : ..."
   resolution            String?   // Dari note "Resolution : ..."
+  source                String?
 
   // Escalation fields — diisi manual oleh admin/leader di halaman Tickets
   escalationNote        String?   @map("escalation_note")
