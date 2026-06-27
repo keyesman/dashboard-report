@@ -85,6 +85,9 @@ export async function runSync(params: SyncParams): Promise<SyncResult> {
             phone                 : data.phone,
             csatRating            : data.csatRating,
             csatFeedback          : data.csatFeedback,
+            subject               : data.subject,      
+            rootCause             : data.rootCause,    
+            resolution            : data.resolution,   
           },
           create: data,
         });

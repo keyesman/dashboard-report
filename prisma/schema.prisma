@@ -76,6 +76,9 @@ model Conversation {
   phone                 String?   // Nomor HP customer
   csatRating            Int?      @map("csat_rating")   // 1–5, nullable
   csatFeedback          String?   @map("csat_feedback") // Teks feedback, nullable
+  subject               String?   // Dari note "Case Subject : ..."
+  rootCause             String?   @map("root_cause") // Dari note "Root Cause : ..."
+  resolution            String?   // Dari note "Resolution : ..."
 
   // Escalation fields — diisi manual oleh admin/leader di halaman Tickets
   escalationNote        String?   @map("escalation_note")

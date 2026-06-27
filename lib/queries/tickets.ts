@@ -49,6 +49,9 @@ export interface TicketRow {
   rawLabels            : string | null;
   csatRating           : number | null; 
   csatFeedback         : string | null; 
+  subject              : string | null;  
+  rootCause            : string | null;  
+  resolution           : string | null;  
 }
 
 // ===========================================================================

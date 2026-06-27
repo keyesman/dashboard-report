@@ -53,6 +53,9 @@ interface Ticket {
   lastNote             : string | null;
   csatRating           : number | null;
   csatFeedback         : string | null;
+  subject              : string | null;
+  rootCause            : string | null;
+  resolution           : string | null;
 }
 
 interface FilterOptions {
@@ -89,7 +92,14 @@ const columns: ColumnDef<Ticket>[] = [
     header     : "Ticket ID",
     cell       : ({ row }) => (
       <span className="font-mono text-xs text-[var(--text-secondary)]">
-        #{row.original.ticketId}
+        <a
+          href={`https://chat.swiftoms.id/app/accounts/2/conversations/${row.original.ticketId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:underline"
+        >
+          #{row.original.ticketId}
+        </a>
       </span>
     ),
   },
@@ -110,6 +120,18 @@ const columns: ColumnDef<Ticket>[] = [
     accessorKey: "status",
     header     : "Status",
     cell       : ({ row }) => <StatusBadge status={row.original.status} />,
+  },
+  {
+    accessorKey: "subject",
+    header     : "Subject",
+    cell       : ({ row }) =>
+      row.original.subject ? (
+        <div className="max-w-[200px]" title={row.original.subject}>
+          <p className="text-xs text-[var(--text-primary)] truncate">{row.original.subject}</p>
+        </div>
+      ) : (
+        <span className="text-xs text-[var(--text-secondary)]">-</span>
+      ),
   },
   {
     accessorKey: "agent",
@@ -223,25 +245,49 @@ const columns: ColumnDef<Ticket>[] = [
         <span className="text-xs text-[var(--text-secondary)]">-</span>
       ),
   },
-  {
-    accessorKey: "lastNote",
-    header     : "Last Note",
-    cell       : ({ row }) => {
-      if (!row.original.lastNote) {
-        return <span className="text-xs text-[var(--text-secondary)]">-</span>;
-      }
+  // {
+  //   accessorKey: "lastNote",
+  //   header     : "Last Note",
+  //   cell       : ({ row }) => {
+  //     if (!row.original.lastNote) {
+  //       return <span className="text-xs text-[var(--text-secondary)]">-</span>;
+  //     }
   
-      return (
-        <div
-          className="max-w-[200px]"
-          title={row.original.lastNote} // Full text muncul saat hover
-        >
-          <p className="text-xs text-[var(--text-primary)] truncate">
-            {row.original.lastNote}
-          </p>
+  //     return (
+  //       <div
+  //         className="max-w-[200px]"
+  //         title={row.original.lastNote} // Full text muncul saat hover
+  //       >
+  //         <p className="text-xs text-[var(--text-primary)] truncate">
+  //           {row.original.lastNote}
+  //         </p>
+  //       </div>
+  //     );
+  //   },
+  // },
+  {
+    accessorKey: "rootCause",
+    header     : "Root Cause",
+    cell       : ({ row }) =>
+      row.original.rootCause ? (
+        <div className="max-w-[200px]" title={row.original.rootCause}>
+          <p className="text-xs text-[var(--text-primary)] truncate">{row.original.rootCause}</p>
         </div>
-      );
-    },
+      ) : (
+        <span className="text-xs text-[var(--text-secondary)]">-</span>
+      ),
+  },
+  {
+    accessorKey: "resolution",
+    header     : "Resolution",
+    cell       : ({ row }) =>
+      row.original.resolution ? (
+        <div className="max-w-[200px]" title={row.original.resolution}>
+          <p className="text-xs text-[var(--text-primary)] truncate">{row.original.resolution}</p>
+        </div>
+      ) : (
+        <span className="text-xs text-[var(--text-secondary)]">-</span>
+      ),
   },  
   {
     accessorKey: "rawLabels",
@@ -587,14 +633,15 @@ export default function TicketsPage() {
                 month: "2-digit",
                 day  : "2-digit",
                 year : "numeric",
-              }),              
+              }),
+              "Subject"             : t.subject       ?? "-",              
               "Status"              : t.status,
               "Agent"               : t.agent               ?? "-",
               "Service"             : t.service             ?? "-",
               "Priority"            : t.priority            ?? "-",
               "Escalate"            : t.escalate            ?? "-",
               "Type"                : t.type                ?? "-",
-              "FRT"                 : secondsToHHMMSS(t.frtSeconds),
+              "First Response Time" : secondsToHHMMSS(t.frtSeconds),
               "Resolution Time"     : secondsToHHMMSS(t.resolutionTimeSeconds),
               "Company"             : toProperCase(t.company) ?? "-",
               "Customer"            : t.customer            ?? "-",
@@ -603,18 +650,19 @@ export default function TicketsPage() {
               "CSAT Feedback"       :  t.csatFeedback ?? "-",
               "Escalation Category" : t.escalationCategory  ?? "-",
               "Escalation Note"     : t.escalationNote      ?? "-",
-              "Last Note": t.lastNote
-                  ? t.lastNote
-                      .replace(`/\r?
-                /g`, " ")
-                      .replace(`/\r/g, " ")
-                      .replace(/
-                /g`, " ")
-                      .replace(`/\
-                /g`, " ")
-                      .trim()
-                  : "-",
-
+              // "Last Note": t.lastNote
+              //     ? t.lastNote
+              //         .replace(`/\r?
+              //   /g`, " ")
+              //         .replace(`/\r/g, " ")
+              //         .replace(/
+              //   /g`, " ")
+              //         .replace(`/\
+              //   /g`, " ")
+              //         .trim()
+              //     : "-",
+              "Root Cause"          : t.rootCause     ?? "-",
+              "Resolution"          : t.resolution    ?? "-",
               "Tags"                : t.rawLabels
                                         ? t.rawLabels
                                         .split(",")

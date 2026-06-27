@@ -145,6 +145,40 @@ export function parseLastNote(messages: ChatwootMessage[]): string | null {
 }
 
 // ===========================================================================
+// PARSE NOTES — Ambil 3 note berprefix dalam 1x loop messages
+// - "Case Subject : ..."  → subject
+// - "Root Cause : ..."    → rootCause
+// - "Resolution : ..."    → resolution
+// Case-insensitive, toleran spasi sekitar ":". Note paling baru yang dipakai.
+// ===========================================================================
+export function parseNotes(messages: ChatwootMessage[]): {
+  subject   : string | null;
+  rootCause : string | null;
+  resolution: string | null;
+} {
+  const patterns = [
+    { key: "subject"    as const, re: /^case subject\s*:\s*([\s\S]+)/i },
+    { key: "rootCause"  as const, re: /^root cause\s*:\s*([\s\S]+)/i   },
+    { key: "resolution" as const, re: /^resolution\s*:\s*([\s\S]+)/i   },
+  ];
+
+  const result = { subject: null, rootCause: null, resolution: null } as {
+    subject: string | null; rootCause: string | null; resolution: string | null;
+  };
+
+  for (const m of messages) {
+    const text = (m.content ?? "").trim();
+    if (!text) continue;
+    for (const { key, re } of patterns) {
+      const match = text.match(re);
+      if (match) result[key] = match[1].trim(); // overwrite → ambil yang terakhir
+    }
+  }
+
+  return result;
+}
+
+// ===========================================================================
 // PARSE CUSTOMER INFO — Ambil info customer dari meta.sender
 // ===========================================================================
 export function parseCustomerInfo(conv: ChatwootConversation): {
@@ -177,6 +211,7 @@ export function buildConversation(
   const customerInfo = parseCustomerInfo(conv);
   const assignee     = conv.meta?.assignee;
   const { csatRating, csatFeedback } = parseCsat(messages);
+  const { subject, rootCause, resolution } = parseNotes(messages);
 
   return {
     ticketId              : conv.id,
@@ -198,6 +233,9 @@ export function buildConversation(
     phone                 : customerInfo.phone,
     csatRating,
     csatFeedback,
+    subject,   
+    rootCause, 
+    resolution,
   };
 }
 
