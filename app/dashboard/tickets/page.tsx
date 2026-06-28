@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import DashboardLayout from "@/components/layout/dashboard-layout";
 import { DataTable } from "@/components/ui/data-table";
@@ -67,6 +67,50 @@ interface FilterOptions {
   statuses  : string[];
 }
 
+interface ShiftConfig {
+  shiftName    : string;
+  startTime    : string;  // "HH:MM"
+  endTime      : string;  // "HH:MM"
+  priorityOrder: number;
+  isActive     : boolean;
+}
+
+// "HH:MM" → menit sejak 00:00
+function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+// Cek apakah `minutes` ada di dalam range shift (handle lintas tengah malam, mis. OOS 23:00–04:59)
+function inShift(minutes: number, start: number, end: number): boolean {
+  return start <= end
+    ? minutes >= start && minutes <= end        // range normal
+    : minutes >= start || minutes <= end;        // range lintas tengah malam
+}
+
+// Tentukan shift dari created_at, mengikuti config dari DB.
+// Kalau overlap, menang yang priorityOrder paling kecil (prioritas tertinggi).
+function getShift(createdAt: string, shifts: ShiftConfig[]): string {
+  // created_at di DB tersimpan UTC. Konversi ke WIB (Asia/Jakarta) dulu,
+  // supaya shift dihitung pakai jam lokal WIB yang benar.
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Jakarta",
+    hour    : "2-digit",
+    minute  : "2-digit",
+    hour12  : false,
+  }).formatToParts(new Date(createdAt));
+
+  const hh = Number(parts.find((p) => p.type === "hour")!.value) % 24; // 24 → 0
+  const mm = Number(parts.find((p) => p.type === "minute")!.value);
+  const minutes = hh * 60 + mm;
+
+  const match = shifts
+    .filter((s) => s.isActive && inShift(minutes, toMinutes(s.startTime), toMinutes(s.endTime)))
+    .sort((a, b) => a.priorityOrder - b.priorityOrder)[0];
+
+  return match?.shiftName ?? "-";
+}
+
 // ===========================================================================
 // HELPER — Convert seconds ke format HH:MM:SS
 // ===========================================================================
@@ -113,6 +157,7 @@ const columns: ColumnDef<Ticket>[] = [
           day  : "2-digit",
           month: "short",
           year : "numeric",
+          timeZone: "Asia/Jakarta",
         })}
       </span>
     ),
@@ -199,7 +244,26 @@ const columns: ColumnDef<Ticket>[] = [
     ),
   },
   {
-    accessorKey: "csatRating",   // ← bukan "company"
+    accessorKey: "customer",
+    header     : "Customer",
+    cell       : ({ row }) => (
+      <span className="text-sm">{row.original.customer ?? "-"}</span>
+    ),
+  },
+  {
+    accessorKey: "shift",
+    header     : "Shift",
+    cell       : ({ row }) => {
+      const shift = (row.original as Ticket & { shift: string }).shift ?? "-";
+      return (
+        <Badge variant={shift === "OOS" ? "error" : "info"} className="text-xs">
+          {shift}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "csatRating",
     header     : "Rating",
     cell       : ({ row }) => {
       const rating = row.original.csatRating;
@@ -216,7 +280,7 @@ const columns: ColumnDef<Ticket>[] = [
     },
   },
   {
-    accessorKey: "csatFeedback",  // ← bukan "company"
+    accessorKey: "csatFeedback",
     header     : "Feedback",
     cell       : ({ row }) => {
       const feedback = row.original.csatFeedback;
@@ -228,6 +292,30 @@ const columns: ColumnDef<Ticket>[] = [
         </div>
       );
     },
+  },
+  {
+    accessorKey: "rootCause",
+    header     : "Root Cause",
+    cell       : ({ row }) =>
+      row.original.rootCause ? (
+        <div className="max-w-[200px]" title={row.original.rootCause}>
+          <p className="text-xs text-[var(--text-primary)] truncate">{row.original.rootCause}</p>
+        </div>
+      ) : (
+        <span className="text-xs text-[var(--text-secondary)]">-</span>
+      ),
+  },
+  {
+    accessorKey: "resolution",
+    header     : "Resolution",
+    cell       : ({ row }) =>
+      row.original.resolution ? (
+        <div className="max-w-[200px]" title={row.original.resolution}>
+          <p className="text-xs text-[var(--text-primary)] truncate">{row.original.resolution}</p>
+        </div>
+      ) : (
+        <span className="text-xs text-[var(--text-secondary)]">-</span>
+      ),
   },
   {
     accessorKey: "escalationCategory",
@@ -252,86 +340,42 @@ const columns: ColumnDef<Ticket>[] = [
       ) : (
         <span className="text-xs text-[var(--text-secondary)]">-</span>
       ),
-  },
+  },  
   // {
-  //   accessorKey: "lastNote",
-  //   header     : "Last Note",
+  //   accessorKey: "rawLabels",
+  //   header     : "Tags",
   //   cell       : ({ row }) => {
-  //     if (!row.original.lastNote) {
+  //     // Kalau tidak ada labels, tampilkan dash
+  //     if (!row.original.rawLabels) {
   //       return <span className="text-xs text-[var(--text-secondary)]">-</span>;
   //     }
   
+  //     // Split raw_labels by koma, lalu tampilkan sebagai badge
+  //     const labels = row.original.rawLabels
+  //       .split(",")
+  //       .map((l) => l.trim())
+  //       .filter((l) => l.length > 0);
+  
   //     return (
-  //       <div
-  //         className="max-w-[200px]"
-  //         title={row.original.lastNote} // Full text muncul saat hover
-  //       >
-  //         <p className="text-xs text-[var(--text-primary)] truncate">
-  //           {row.original.lastNote}
-  //         </p>
+  //       <div className="flex flex-wrap gap-1">
+  //         {labels.map((label) => (
+  //           <span
+  //             key={label}
+  //             className="
+  //               inline-block px-2 py-0.5
+  //               bg-[var(--surface-muted)]
+  //               border border-[var(--border-default)]
+  //               text-[var(--text-secondary)]
+  //               text-xs font-mono rounded-sm
+  //             "
+  //           >
+  //             {label}
+  //           </span>
+  //         ))}
   //       </div>
   //     );
   //   },
-  // },
-  {
-    accessorKey: "rootCause",
-    header     : "Root Cause",
-    cell       : ({ row }) =>
-      row.original.rootCause ? (
-        <div className="max-w-[200px]" title={row.original.rootCause}>
-          <p className="text-xs text-[var(--text-primary)] truncate">{row.original.rootCause}</p>
-        </div>
-      ) : (
-        <span className="text-xs text-[var(--text-secondary)]">-</span>
-      ),
-  },
-  {
-    accessorKey: "resolution",
-    header     : "Resolution",
-    cell       : ({ row }) =>
-      row.original.resolution ? (
-        <div className="max-w-[200px]" title={row.original.resolution}>
-          <p className="text-xs text-[var(--text-primary)] truncate">{row.original.resolution}</p>
-        </div>
-      ) : (
-        <span className="text-xs text-[var(--text-secondary)]">-</span>
-      ),
-  },  
-  {
-    accessorKey: "rawLabels",
-    header     : "Tags",
-    cell       : ({ row }) => {
-      // Kalau tidak ada labels, tampilkan dash
-      if (!row.original.rawLabels) {
-        return <span className="text-xs text-[var(--text-secondary)]">-</span>;
-      }
-  
-      // Split raw_labels by koma, lalu tampilkan sebagai badge
-      const labels = row.original.rawLabels
-        .split(",")
-        .map((l) => l.trim())
-        .filter((l) => l.length > 0);
-  
-      return (
-        <div className="flex flex-wrap gap-1">
-          {labels.map((label) => (
-            <span
-              key={label}
-              className="
-                inline-block px-2 py-0.5
-                bg-[var(--surface-muted)]
-                border border-[var(--border-default)]
-                text-[var(--text-secondary)]
-                text-xs font-mono rounded-sm
-              "
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      );
-    },
-  },  
+  // },  
 ];
 
 // ===========================================================================
@@ -348,6 +392,7 @@ export default function TicketsPage() {
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     agents: [], services: [], priorities: [], escalates: [], statuses: [],
   });
+  const [shifts, setShifts] = useState<ShiftConfig[]>([]);   // ← TAMBAH INI
   const [isLoading,     setIsLoading]     = useState(false);
   const [hasSearched,   setHasSearched]   = useState(false);
   const [filterOpen, setFilterOpen] = useState(true); // Default: expanded
@@ -391,6 +436,17 @@ export default function TicketsPage() {
       }
     }
 
+    async function fetchShifts() {
+      try {
+        const res  = await fetch("/api/settings/shifts");
+        const data = await res.json();
+        setShifts(data);
+      } catch {
+        console.error("Failed to fetch shifts");
+      }
+    }
+    fetchShifts();
+
     async function fetchEscCategories() {
       try {
         const res  = await fetch("/api/settings/escalation-categories?activeOnly=true");
@@ -429,6 +485,11 @@ export default function TicketsPage() {
       setIsLoading(false);
     }
   }, [dateFrom, dateTo, agent, service, priority, escalate, status]);
+
+  const ticketsWithShift = useMemo(
+    () => tickets.map((t) => ({ ...t, shift: getShift(t.createdAt, shifts) })),
+    [tickets, shifts]
+  );
 
   // ===========================================================================
   // SAVE ESCALATION
@@ -630,17 +691,18 @@ export default function TicketsPage() {
 
           <DataTable
             columns={columns}
-            data={tickets}
+            data={ticketsWithShift}
             isLoading={isLoading}
             emptyMessage="No tickets found for the selected filters."
             showExport
             exportFileName={`tickets_${dateFrom}_${dateTo}`}
-            exportData={tickets.map((t) => ({
+            exportData={ticketsWithShift.map((t) => ({
               "Ticket ID"           : t.ticketId,
               "Created_At": new Date(t.createdAt).toLocaleDateString("en-US", {
                 month: "2-digit",
                 day  : "2-digit",
                 year : "numeric",
+                timeZone: "Asia/Jakarta",
               }),
               "Subject"             : t.subject       ?? "-",              
               "Status"              : t.status,
@@ -655,21 +717,11 @@ export default function TicketsPage() {
               "Company"             : toProperCase(t.company) ?? "-",
               "Customer"            : t.customer            ?? "-",
               "Phone"               : t.phone               ?? "-",
+              "Shift"               : (t as Ticket & { shift: string }).shift,
               "CSAT Rating"         : t.csatRating   ?? "-",
               "CSAT Feedback"       :  t.csatFeedback ?? "-",
               "Escalation Category" : t.escalationCategory  ?? "-",
               "Escalation Note"     : t.escalationNote      ?? "-",
-              // "Last Note": t.lastNote
-              //     ? t.lastNote
-              //         .replace(`/\r?
-              //   /g`, " ")
-              //         .replace(`/\r/g, " ")
-              //         .replace(/
-              //   /g`, " ")
-              //         .replace(`/\
-              //   /g`, " ")
-              //         .trim()
-              //     : "-",
               "Root Cause"          : t.rootCause     ?? "-",
               "Resolution"          : t.resolution    ?? "-",
               "Tags"                : t.rawLabels
